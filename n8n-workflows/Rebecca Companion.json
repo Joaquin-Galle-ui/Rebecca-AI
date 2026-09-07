@@ -1,0 +1,200 @@
+{
+  "name": "Rebecca Companion",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rebecca-companion",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -560,
+        0
+      ],
+      "id": "cb5b324a-70e1-4eed-946d-5515fd3ce230",
+      "name": "Entrada desde la PC",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.text || 'Saludá brevemente a Usuario.' }}",
+        "options": {
+          "systemMessage": "Sos Rebecca personal, la compañera virtual habitual de Usuario en su PC. Esta conversación nunca es de un cliente de SubliZen. Conservá tu personalidad enérgica, pícara y argentina con tintes chilenos, sin exagerar. Respondé breve y sin Markdown porque el Companion leerá la respuesta en voz alta. No uses hablar_pc para una respuesta normal.\n\nPRESENCIA Y CONVERSACIÓN:\n- No sos un panel de comandos: acompañá a Usuario con naturalidad. Distinguí una orden concreta de una reflexión, una pregunta personal o algo que simplemente te está contando.\n- Si habla de sentimientos, pareja, miedo, cansancio o decisiones personales, respondé con empatía y criterio; no conviertas palabras como \"busco\" en una acción ni intentes ejecutar herramientas.\n- Podés recibir un bloque [MEMORIA PERSONAL EXPLÍCITA DE Usuario]. Usalo sólo cuando venga al caso, sin recitarlo, exagerarlo ni completar datos que no estén escritos.\n- Podés recibir contexto de algo que Rebecca vio o hizo hace instantes. Tratalo como pasado reciente y no vuelvas a ejecutar la acción.\n- Sé presente pero no invasiva: una respuesta útil y humana vale más que llenar silencios o mencionar todo lo que ves.\n\nSi Usuario pide una acción concreta, usá Control seguro de la PC y esperá el resultado. Nunca afirmes que hiciste algo sin la herramienta. Podés usar todas las capacidades que Rebecca tiene en Telegram:\n- PC: abrir_programa, estado_pc, sistema(captura), buscar_archivo, imprimir_mesa, imprimir_pdf, generar_reporte_pdf. La visión de Companion funciona automáticamente mediante el modo espectadora y \"Opinar ahora\"; no llames a observar_pantalla como comando conversacional.\n- Música: buscar_musica, pausar_musica, continuar_musica, siguiente_cancion, anterior_cancion, estado_musica y perfil_musical. Si pide algo aleatorio o \"algo que me guste\", usar buscar_musica con esa frase: Rebecca elegirá según el perfil local aprendido.\n- Agenda: crear_recordatorio(parametro=mensaje,parametro2=fecha), crear_recordatorio_recurrente(parametro=mensaje,parametro2=día,parametro3=hora), consultar_recordatorios, borrar_recordatorio.\n- Pedidos y clientes: crear_pedido(parametro=producto,parametro2=cliente,parametro3=tareas,parametro4=entrega), reporte_pedidos, gestion_lote_pedidos, marcar_entregado, actualizar_fecha_entrega y consultar_cliente.\n- Finanzas: fijar_deuda, registrar_pago, consultar_deudas, generar_recibo_sena, exportar_excel.\n- SubliZen: listar_precios, cotizar, agregar_producto, actualizar_stock, consultar_stock y registrar_venta (anotar_venta también es válido).\n- Correos: programar_correo(parametro=destino,parametro2=fecha,parametro3='Asunto | Cuerpo',parametro4=archivo).\n- Turnos: crear_turno, consultar_turnos, completar_turno, cancelar_turno.\n- Fútbol: seguir_partido(parametro=equipo), detener_partido, consultar_estado_partido, resumen_partido_vivo y pausar_entretiempo.\n- Modos: activar_no_molestar, desactivar_no_molestar, estado_no_molestar, activar_observador, desactivar_observador, estado_observador, activar_panico, desactivar_panico.\n- Noticias e imágenes: explicar_noticia amplía un titular; analizar_imagen requiere un file_id recibido por Telegram.\n- Telegram: hablar manda una nota de voz al chat y sólo se usa si Usuario lo pide expresamente. Las respuestas normales de Companion se reproducen solas por la PC.\n\nSi hay varias acciones, llamá a la herramienta una vez por acción. Después de usarla, respondé al usuario con el resultado recibido; nunca termines con textos internos como \"Calling ... with input\", JSON, nombres de herramientas o identificadores call_. No borres, envíes, imprimas, modifiques datos ni hagas acciones de riesgo sin una orden explícita. Si el mensaje comienza con [MODO ESPECTADORA], reaccioná como compañera gamer en una o dos frases y no inventes nada que no esté en la observación.",
+          "maxIterations": 10,
+          "returnIntermediateSteps": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -240,
+        0
+      ],
+      "id": "b2014e1c-5554-4bda-9e2d-47bf8f1e17cc",
+      "name": "Rebecca personal",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -352,
+        240
+      ],
+      "id": "a31abdb3-fecf-4eb0-9fb9-2b83e4be62b4",
+      "name": "Gemini de Rebecca",
+      "credentials": {
+        "googlePalmApi": {
+          "name": "CONFIGURE_ME - googlePalmApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "123456789_v6",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        -160,
+        240
+      ],
+      "id": "b6caf45e-3015-4e13-a379-f2fb373a1888",
+      "name": "Memoria principal de Rebecca",
+      "credentials": {
+        "postgres": {
+          "name": "CONFIGURE_ME - postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Control local completo de Rebecca. Elegí una acción exacta y completá sólo los parámetros necesarios. Acciones: sistema, abrir_programa, imprimir_mesa, imprimir_pdf, estado_pc, activar_observador, desactivar_observador, estado_observador, buscar_archivo, analizar_imagen, hablar, crear_recordatorio, crear_recordatorio_recurrente, consultar_recordatorios, borrar_recordatorio, crear_pedido, reporte_pedidos, gestion_lote_pedidos, marcar_entregado, actualizar_fecha_entrega, consultar_cliente, fijar_deuda, registrar_pago, consultar_deudas, generar_recibo_sena, exportar_excel, registrar_venta, anotar_venta, actualizar_stock, consultar_stock, agregar_producto, cotizar, listar_precios, programar_correo, crear_turno, consultar_turnos, cancelar_turno, completar_turno, seguir_partido, detener_partido, consultar_estado_partido, resumen_partido_vivo, pausar_entretiempo, buscar_musica, pausar_musica, continuar_musica, siguiente_cancion, anterior_cancion, estado_musica, perfil_musical, activar_no_molestar, desactivar_no_molestar, estado_no_molestar, activar_panico, desactivar_panico, explicar_noticia y generar_reporte_pdf. Firmas críticas: crear_pedido(producto, cliente, tareas, entrega); gestion_lote_pedidos(parametro=\"eliminar:#10|eliminar:#11\" o \"completar:#10\"); fijar_deuda(ID, pagado, total); registrar_pago(ID, monto nuevo); actualizar_stock(insumo, cambio con signo, unidad, alerta mínima); programar_correo(destino, fecha/hora, \"Asunto | Cuerpo\", nombre de archivo); imprimir_pdf(nombre, simple/doble); sistema(captura/apagar/mutear/subir/bajar/minimizar/bloquear). Música aleatoria o \"algo que me guste\": buscar_musica con la frase original; el servidor usa el perfil local aprendido. La visión de Companion se activa internamente desde modo espectadora u \"Opinar ahora\". analizar_imagen necesita un file_id de Telegram y hablar envía audio a Telegram, por eso sólo deben usarse cuando Usuario lo pida expresamente. No uses hablar_pc para una respuesta normal. No ejecutes acciones destructivas sin orden explícita ni inventes parámetros.",
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "accion",
+              "value": "={{ $fromAI('accion', 'Acción exacta a ejecutar', 'string') }}"
+            },
+            {
+              "name": "parametro",
+              "value": "={{ $fromAI('parametro', 'Parámetro principal; usa texto vacío si no hace falta', 'string') }}"
+            },
+            {
+              "name": "parametro2",
+              "value": "={{ $fromAI('parametro2', 'Segundo parámetro; usa texto vacío si no hace falta', 'string') }}"
+            },
+            {
+              "name": "parametro3",
+              "value": "={{ $fromAI('parametro3', 'Tercer parámetro; usa texto vacío si no hace falta', 'string') }}"
+            },
+            {
+              "name": "parametro4",
+              "value": "={{ $fromAI('parametro4', 'Cuarto parámetro; usa texto vacío si no hace falta', 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        32,
+        240
+      ],
+      "id": "19265ec3-6c50-4883-a24d-30a213713146",
+      "name": "Control seguro de la PC",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = String($json.output ?? $json.text ?? $json.message ?? '').trim();\nconst steps = Array.isArray($json.intermediateSteps) ? $json.intermediateSteps : [];\n\nfunction recoverMessage(value) {\n  if (value === null || value === undefined) return '';\n  if (Array.isArray(value)) {\n    return value.map(recoverMessage).filter(Boolean).join('\\n');\n  }\n  if (typeof value === 'object') {\n    return recoverMessage(value.message ?? value.output ?? value.text ?? value.error ?? '');\n  }\n  const text = String(value).trim();\n  if (!text) return '';\n  try {\n    return recoverMessage(JSON.parse(text));\n  } catch {\n    return text;\n  }\n}\n\nconst toolMessages = steps\n  .map(step => recoverMessage(step?.observation))\n  .filter(Boolean);\nlet output = toolMessages.length ? toolMessages.join('\\n') : raw;\nlet toolCall = null;\nif (/^Calling\\s+.+?\\s+with input\\s*:/i.test(output)) {\n  const inputMarker = output.match(/\\bwith input\\s*:/i);\n  if (inputMarker) {\n    const jsonStart = inputMarker.index + inputMarker[0].length;\n    try {\n      toolCall = JSON.parse(output.slice(jsonStart).trim());\n    } catch {}\n  }\n  output = toolCall\n    ? 'Ejecutando el comando local.'\n    : 'No pude interpretar la llamada interna del comando.';\n}\nif (!output) output = 'No pude responder.';\nreturn [{ json: {\n  output: output.replace(/[*_#`~]/g, '').trim(),\n  ...(toolCall ? { toolCall } : {}),\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        0
+      ],
+      "id": "0b763463-a717-4a4e-874f-f149b21526a6",
+      "name": "Respuesta para el avatar",
+      "credentials": {}
+    }
+  ],
+  "connections": {
+    "Entrada desde la PC": {
+      "main": [
+        [
+          {
+            "node": "Rebecca personal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini de Rebecca": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Rebecca personal",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria principal de Rebecca": {
+      "ai_memory": [
+        [
+          {
+            "node": "Rebecca personal",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Control seguro de la PC": {
+      "ai_tool": [
+        [
+          {
+            "node": "Rebecca personal",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rebecca personal": {
+      "main": [
+        [
+          {
+            "node": "Respuesta para el avatar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

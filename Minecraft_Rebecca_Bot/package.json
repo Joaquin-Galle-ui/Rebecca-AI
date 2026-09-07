@@ -1,0 +1,15 @@
+{
+  "name": "rebecca-minecraft-bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Compañera segura de Minecraft conectada a la memoria personal de Rebecca",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --check index.js"
+  },
+  "dependencies": {
+    "mineflayer": "latest",
+    "mineflayer-pathfinder": "latest"
+  }
+}

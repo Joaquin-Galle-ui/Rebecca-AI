@@ -1,0 +1,7 @@
+<metadata>
+    <name>Rebecca BotCoop</name>
+    <directory>BotCoop</directory>
+    <description>Puente de telemetria entre Isaac y Rebecca. K agrega al segundo jugador; F8 pausa la telemetria.</description>
+    <version>2.0</version>
+    <visibility>Public</visibility>
+</metadata>

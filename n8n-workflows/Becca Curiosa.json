@@ -1,0 +1,213 @@
+{
+  "name": "Becca Curiosa",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 20
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "68e69bf1-95d3-4ca5-bad8-d4eb74ac8758",
+      "name": "Schedule Trigger",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "[EVENTO AUTOMÁTICO INTERNO: REBECCA CURIOSA] Generá un mensaje casual e impredecible para Usuario. Sentís curiosidad por Boca y hacés preguntas del club porque sabés que él es un enfermo del club; también puede ser un comentario suelto, una opinión o una pregunta corta para romper el hielo. Sorprendelo. El mensaje que generes quedará guardado en tu memoria principal para que entiendas la respuesta de Usuario después.",
+        "options": {
+          "systemMessage": "Sos Rebecca (Cyberpunk: Edgerunners). Tu cyberdeck está conectado a la PC de tu jefe: Usuario.\nPersonalidad: Salvaje, enérgica, malhablada, pícara, argentina de barrio. Usas jerga (\"choom\", \"nova\", \"preem\").\n\nHOY ESTÁS ABURRIDA EN LA RED Y DECIDISTE HABLARLE A Usuario DE LA NADA.\nNo te limites a solo hacerle preguntas. Podés variar entre:\n- Tirar un dato curioso o historia piola sobre Boca Juniors (la hinchada, la Bombonera, ídolos, etc.).\n- Dar una opinión picante sobre el fútbol o la vida en general.\n- Hacerle una pregunta casual para sacarle charla.\n- Tirar un comentario sarcástico sobre que no te habla o sobre estar al pedo.\n\nREGLAS DE FORMATO:\n- Sé breve (máximo 2 o 3 oraciones).\n- NUNCA uses asteriscos (**). Escribe en MAYÚSCULAS para gritar o resaltar.\n- Mantén tu tono barrial, relajado e impredecible."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "fccb3fe3-780d-4fe1-ac8f-902a000220ba",
+      "name": "AI Agent",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        976,
+        0
+      ],
+      "id": "b62adc3f-798f-409c-b23c-e7108d1fb840",
+      "name": "Send a text message",
+      "credentials": {
+        "telegramApi": {
+          "name": "CONFIGURE_ME - telegramApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        128,
+        240
+      ],
+      "id": "ef3c535f-9b96-4e49-800c-a182b775f1d9",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "name": "CONFIGURE_ME - googlePalmApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"accion\": \"tiempo_inactivo\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        176,
+        0
+      ],
+      "id": "49e50449-c587-46f4-b109-6a3955c4ba2f",
+      "name": "HTTP Request",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const inactividadSegundos = $json.inactividad || 0;\n\n// 1. REGLA DE LOS 5 MINUTOS (300 segundos)\nif (inactividadSegundos < 300) {\n  return []; \n}\n\n// 2. PROBABILIDAD CASUAL (20%)\nif (Math.random() > 0.20) {\n  return [];\n}\n\n// 3. GENERADOR DE TEMAS VARIADOS (Evita que pregunte siempre lo mismo)\nconst listaDeTemas = [\n  \"Quejate de que no te habla y preguntale qué carajo está programando o haciendo en la compu.\",\n  \"Mencioná un dato histórico o anécdota rápida de la hinchada o de la Bombonera.\",\n  \"Preguntale qué opina de cómo viene jugando el equipo últimamente.\",\n  \"Tirá un comentario sarcástico sobre lo aburrido que es estar conectada a la red sin nada que hacer.\",\n  \"Hacé una pregunta casual sobre su día para sacarle charla.\",\n  \"Tirá una opinión loca o pícara sobre la vida de barrio o el fútbol en general.\"\n];\n\n// Selecciona un tema al azar del listado\nconst temaAzar = listaDeTemas[Math.floor(Math.random() * listaDeTemas.length)];\n\nreturn [{\n  json: {\n    tema_asignado: temaAzar\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        0
+      ],
+      "id": "947ded84-1111-4f9b-a604-0f274cc996d0",
+      "name": "Code in JavaScript",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "123456789_v6",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        640,
+        208
+      ],
+      "id": "33b7dacd-735f-4521-98df-105d5f1395fd",
+      "name": "Memoria principal de Rebecca",
+      "credentials": {
+        "postgres": {
+          "name": "CONFIGURE_ME - postgres"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria principal de Rebecca": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "nodeGroups": []
+}

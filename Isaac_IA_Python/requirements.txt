@@ -1,0 +1,2 @@
+requests>=2.32,<3
+vgamepad>=0.1.0,<1

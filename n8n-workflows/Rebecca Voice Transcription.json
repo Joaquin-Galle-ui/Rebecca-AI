@@ -1,0 +1,105 @@
+{
+  "name": "Rebecca Voice Transcription",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rebecca-voice-transcribe",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -480,
+        0
+      ],
+      "id": "3b314dfd-7dcb-46f4-b688-1bb26316ade5",
+      "name": "Audio desde la PC",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "groqApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "whisper-large-v3"
+            },
+            {
+              "name": "language",
+              "value": "es"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -240,
+        0
+      ],
+      "id": "9151e55d-bbf3-4232-938b-44a7636ab141",
+      "name": "Entender con Groq",
+      "credentials": {
+        "groqApi": {
+          "name": "CONFIGURE_ME - groqApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = String($json.text || $json.transcript || '').trim();\nreturn [{ json: { text } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "827f4cdc-3ba6-4ef2-8ec2-826f3bcc61ec",
+      "name": "Texto para Rebecca",
+      "credentials": {}
+    }
+  ],
+  "connections": {
+    "Audio desde la PC": {
+      "main": [
+        [
+          {
+            "node": "Entender con Groq",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entender con Groq": {
+      "main": [
+        [
+          {
+            "node": "Texto para Rebecca",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

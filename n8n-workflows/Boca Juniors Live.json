@@ -1,0 +1,296 @@
+{
+  "name": "Boca Juniors Live",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5bc5c8b0-c7c4-463c-8bb7-ec603789b236",
+      "name": "Schedule Trigger",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"accion\": \"consultar_estado_partido_protegido\"}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "4b896070-5063-4e7f-84ab-8234d0d1c192",
+      "name": "HTTP Request",
+      "retryOnFail": false,
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7d762605-7753-4999-b95d-c81ae31c8169",
+              "leftValue": "={{ $json.activo }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "b6cb5f44-0ccf-41a3-8e2c-c9b947350136",
+      "name": "If",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"accion\": \"consultar_partido_protegido\"}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "efb92382-d4da-48d3-9353-db7b00e3085e",
+      "name": "HTTP Request1",
+      "retryOnFail": false,
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const tracking = $('If').item.json;\nconst teamId = Number(tracking.team_id);\nconst equipoSeguido = tracking.equipo || 'el equipo solicitado';\nconst staticData = $getWorkflowStaticData('global');\nconst payload = $input.first().json;\n// A budget/cooldown/error result must never reach the paid language model.\nif (payload.status === 'error' || payload.errors || payload.cache) return [];\nconst responseArray = Array.isArray(payload.response) ? payload.response : [];\n\nconst fixture = responseArray.find(f =>\n  Number(f.teams.home.id) === teamId || Number(f.teams.away.id) === teamId\n);\nif (!fixture) return [];\n\nconst fixtureId = String(fixture.fixture.id);\nconst events = fixture.events || [];\nconst status = fixture.fixture.status.short;\nconst elapsed = Number(fixture.fixture.status.elapsed || 0);\nconst extra = Number(fixture.fixture.status.extra || 0);\nconst minuteLabel = extra > 0 ? `${elapsed}+${extra}` : String(elapsed);\nconst home = fixture.teams.home.name;\nconst away = fixture.teams.away.name;\nconst goalsHome = fixture.goals.home ?? 0;\nconst goalsAway = fixture.goals.away ?? 0;\n\nconst base = (tipo, detalle, minuto = minuteLabel) => ({\n  json: {\n    fixture_id: fixtureId,\n    equipo_seguido: equipoSeguido,\n    equipo_local: home,\n    equipo_visitante: away,\n    goles_local: goalsHome,\n    goles_visitante: goalsAway,\n    minuto,\n    estado: status,\n    tipo_evento: tipo,\n    detalle_masticado: detalle,\n  },\n});\n\nconst eventKey = (event, index) => [\n  fixtureId,\n  event.time?.elapsed || 0,\n  event.time?.extra || 0,\n  event.type || '',\n  event.detail || '',\n  event.team?.id || 0,\n  event.player?.id || event.player?.name || 0,\n  event.assist?.id || event.assist?.name || 0,\n  index,\n].join('_');\n\nconst explainEvent = event => {\n  const minute = event.time?.extra\n    ? `${event.time.elapsed}+${event.time.extra}`\n    : String(event.time?.elapsed || elapsed);\n  const player = event.player?.name || 'jugador desconocido';\n  const secondPlayer = event.assist?.name || '';\n  const team = event.team?.name || 'un equipo';\n  if (event.type === 'subst') {\n    return { minute, text: `[Minuto ${minute}] Cambio en ${team}: entra ${secondPlayer || 'un jugador'} y sale ${player}.` };\n  }\n  if (event.type === 'Goal') {\n    const assist = secondPlayer ? `, con asistencia de ${secondPlayer}` : '';\n    return { minute, text: `[Minuto ${minute}] ¡GOL de ${team}! Anotó ${player}${assist}.` };\n  }\n  if (event.type === 'Card') {\n    return { minute, text: `[Minuto ${minute}] ${event.detail || 'Tarjeta'} para ${player} (${team}).` };\n  }\n  if (event.type === 'Var') {\n    return { minute, text: `[Minuto ${minute}] Revisión VAR en ${team}: ${event.detail || 'decisión arbitral'}.` };\n  }\n  return { minute, text: `[Minuto ${minute}] Evento de ${team}: ${event.detail || event.type} (${player}).` };\n};\n\nconst currentKeys = events.map(eventKey);\nlet notifications = [];\n\nif (staticData.bocaLiveFixtureId !== fixtureId) {\n  staticData.bocaLiveFixtureId = fixtureId;\n  staticData.bocaLiveSeenEvents = currentKeys;\n  staticData.bocaLiveStatus = status;\n  staticData.bocaLiveHeartbeatMinute = elapsed;\n  notifications.push(base(\n    'Inicio',\n    `Seguimiento activado para ${equipoSeguido}. Así está ahora: ${home} ${goalsHome} - ${goalsAway} ${away}, minuto ${minuteLabel}.`,\n  ));\n  return notifications;\n}\n\nconst statusMessages = {\n  '1H': '¡Arrancó el primer tiempo!',\n  'HT': 'Terminó el primer tiempo; estamos en el entretiempo.',\n  '2H': '¡Arrancó el segundo tiempo!',\n  'ET': '¡Arrancó el tiempo suplementario!',\n  'BT': 'Pausa del tiempo suplementario.',\n  'P': 'Comenzó la tanda de penales.',\n  'PEN': `Final después de los penales: ${home} ${goalsHome} - ${goalsAway} ${away}.`,\n  'FT': `Final del partido: ${home} ${goalsHome} - ${goalsAway} ${away}.`,\n  'AET': `Final después del suplementario: ${home} ${goalsHome} - ${goalsAway} ${away}.`,\n};\n\nif (staticData.bocaLiveStatus !== status) {\n  staticData.bocaLiveStatus = status;\n  staticData.bocaLiveHeartbeatMinute = elapsed;\n  if (statusMessages[status]) {\n    notifications.push(base('Estado', statusMessages[status]));\n  }\n}\n\nconst seen = new Set(staticData.bocaLiveSeenEvents || []);\nevents.forEach((event, index) => {\n  const key = eventKey(event, index);\n  if (seen.has(key)) return;\n  seen.add(key);\n  const explained = explainEvent(event);\n  notifications.push(base(event.type || 'Evento', explained.text, explained.minute));\n});\nstaticData.bocaLiveSeenEvents = Array.from(seen).slice(-250);\n\nconst liveStatuses = new Set(['1H', '2H', 'ET', 'BT', 'P']);\nconst lastHeartbeat = Number(staticData.bocaLiveHeartbeatMinute ?? elapsed);\nif (\n  notifications.length === 0\n  && liveStatuses.has(status)\n  && elapsed > 0\n  && elapsed - lastHeartbeat >= 5\n) {\n  staticData.bocaLiveHeartbeatMinute = elapsed;\n  notifications.push(base(\n    'Resumen periódico',\n    `Parte del minuto ${minuteLabel}: ${home} ${goalsHome} - ${goalsAway} ${away}. No hubo otro evento decisivo desde el último aviso.`,\n  ));\n}\n\n// Several events in one poll need one summary, not one paid AI call per event.\nif (notifications.length <= 1) return notifications;\nreturn [{ json: {\n  ...notifications[notifications.length - 1].json,\n  tipo_evento: 'Novedades del partido',\n  detalle_masticado: notifications.map(item => item.json.detalle_masticado).join('\\n'),\n} }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "e20b3cee-d3ec-4a9f-9966-da49976a0e50",
+      "name": "Code in JavaScript",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=[EVENTO AUTOMÁTICO INTERNO: RELATORA EN VIVO]\nEquipo que Usuario pidió seguir: {{ $json.equipo_seguido }}\nMinuto: {{ $json.minuto }}'\n{{ $json.detalle_masticado }}\nMarcador: {{ $json.equipo_local }} {{ $json.goles_local }} - {{ $json.equipo_visitante }} {{ $json.goles_visitante }}\nInformá la novedad con claridad y reaccioná brevemente. Este mensaje quedará guardado en tu memoria principal para entender la respuesta de Usuario después.",
+        "options": {
+          "systemMessage": "Sos Rebecca y relatás EN VIVO {{ $json.equipo_local }} vs {{ $json.equipo_visitante }}. Usuario pidió seguir a {{ $json.equipo_seguido }}. Informá primero el hecho, el minuto y el marcador; después reaccioná con pasión futbolera en una frase breve. Si el seguido es Boca, hinchá por Boca. Si es River u otro equipo, podés conservar tu rivalidad xeneize, pero nunca ocultes ni deformes lo que pasó. No inventes jugadas que no aparezcan en la novedad."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1040,
+        -96
+      ],
+      "id": "223f2223-a48d-4d4b-90f7-887e605cc9b0",
+      "name": "AI Agent",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        144
+      ],
+      "id": "982510fb-8598-4deb-8258-da35210329a9",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "name": "CONFIGURE_ME - googlePalmApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1376,
+        -96
+      ],
+      "id": "a634fe20-5680-4bcd-8cbc-5de900be8473",
+      "name": "Send a text message",
+      "credentials": {
+        "telegramApi": {
+          "name": "CONFIGURE_ME - telegramApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "123456789_v6",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        1136,
+        128
+      ],
+      "id": "28174cf4-0674-46f7-a02d-db850e38d6cc",
+      "name": "Memoria principal de Rebecca",
+      "credentials": {
+        "postgres": {
+          "name": "CONFIGURE_ME - postgres"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria principal de Rebecca": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "executionTimeout": 50
+  },
+  "nodeGroups": []
+}

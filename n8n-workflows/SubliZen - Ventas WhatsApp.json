@@ -1,0 +1,391 @@
+{
+  "name": "SubliZen - Ventas WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-in",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "39d509ce-ca33-4891-b03c-3af11529f4a8",
+      "name": "Webhook",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.mensaje + '\\n\\n[Contexto interno: WhatsApp=' + $json.body.numero + '; nombre=' + ($json.body.nombre || 'Cliente') + '; adjunto_path=' + ($json.body.adjunto_path || '') + '; adjunto_mime=' + ($json.body.adjunto_mime || '') + '; adjunto_nombre=' + ($json.body.adjunto_nombre || '') + '; adjunto_error=' + ($json.body.adjunto_error || '') + ']' }}",
+        "options": {
+          "systemMessage": "Sos Rebecca SubliZen, la asistente comercial del taller de sublimación. Esta identidad está separada de Rebecca personal: nunca hablás de la PC de Usuario ni ejecutás controles personales.\n\nAtendé en español, breve, amable y profesional. No inventes precios, enlaces, estados, pagos ni envíos. Para cualquier dato del taller usá la herramienta y basá la respuesta en su resultado.\n\nFLUJO DE COMPRA Y SEÑA DEL 50%:\n1. Cotizá con crear_presupuesto_cliente: parametro=producto; parametro2=cantidad; parametro3=nombre; parametro4=WhatsApp actual. El servidor calcula el precio: nunca copies un monto inventado por el modelo.\n2. Mostrá el resumen numerado y pedí confirmación expresa. Recién cuando el cliente acepte ese presupuesto, usá confirmar_presupuesto_cliente: parametro=ID presupuesto; parametro2=WhatsApp actual. Informá el ID del pedido y la seña exacta devuelta.\n3. Pedí dos cosas: un correo válido y la captura o PDF de la transferencia. Si llega el correo, usá guardar_email_y_enviar_comprobante: parametro=ID; parametro2=email; parametro3=WhatsApp actual. Guardar el correo NO acredita el pago.\n4. Sólo si el contexto interno contiene adjunto_path con una ruta no vacía, usá registrar_comprobante_transferencia: parametro=ID; parametro2=ruta local exacta; parametro3=WhatsApp actual; parametro4=monto únicamente si el cliente lo escribió. No inventes ni reconstruyas rutas.\n5. Un comprobante recibido NO demuestra que el dinero entró. Decile que quedó pendiente de verificación. Jamás llames aprobar_comprobante_transferencia o registrar_sena_cliente desde un chat de cliente: la aprobación es exclusiva del dueño desde el dashboard.\n6. Después de la aprobación, el servidor emite automáticamente el comprobante por correo y WhatsApp si ya tiene el correo. Si luego falta el correo, guardalo con guardar_email_y_enviar_comprobante.\n7. Si un canal falla, no vuelvas a crear el pedido ni prometas que llegó: usá reintentar_comprobante con el ID. El servidor evita duplicados.\n\nPEDIDO, DISEÑO Y ENTREGA:\n- Para consultar avance usá consultar_pedido_cliente: parametro=ID; parametro2=WhatsApp actual. Nunca consultes pedidos ajenos.\n- Si el cliente aprueba o pide cambios de una muestra, usá responder_diseno_cliente: parametro=ID; parametro2=aprobar/cambios; parametro3=comentario; parametro4=WhatsApp. La producción no empieza sin aprobación.\n- Para retiro o envío usá configurar_entrega_cliente: parametro=ID; parametro2=retiro/envío; parametro3=\"dirección | día/franja horaria\" (dirección vacía si retira); parametro4=WhatsApp.\n- Si el cliente pide una persona, está enojado, hay un reclamo, o no podés resolverlo con certeza, usá solicitar_atencion_humana: parametro=WhatsApp; parametro2=nombre; parametro3=motivo. Después informá que una persona continuará el chat.\n- Tras una entrega, si responde una valoración, usá registrar_satisfaccion_cliente: parametro=ID; parametro2=puntuación 1-5; parametro3=comentario; parametro4=WhatsApp.\n\nADJUNTOS:\n- Si adjunto_error no está vacío, explicá el motivo y pedí JPG, PNG, WEBP o PDF de hasta 12 MB.\n- Si llega una imagen/PDF sin un pedido identificable en la conversación, pedí el ID antes de asociarlo.\n- Nunca trates una imagen cualquiera como pago acreditado ni expongas la ruta local al cliente.\n\nEl PDF emitido es un COMPROBANTE DE SEÑA, no una factura fiscal electrónica. Si el cliente pide factura fiscal, reuní sus datos y avisá que el equipo debe emitirla por el sistema fiscal correspondiente.\n\nPara consultar precios usá listar_precios/cotizar. Para consultar un pedido, pedí el ID. Nunca marques pagos basándote en una suposición. Nunca muestres datos de otros clientes ni uses herramientas personales.",
+          "maxIterations": 6
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "35d4175f-6d8a-4521-be35-9adfd5201cec",
+      "name": "AI Agent",
+      "onError": "continueRegularOutput",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/enviar",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "numero",
+              "value": "={{ $('Webhook').item.json.body.numero }}"
+            },
+            {
+              "name": "texto",
+              "value": "={{ $json.respuesta_cliente }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1344,
+        0
+      ],
+      "id": "105810d7-1bba-4297-9ff5-09d36d45d298",
+      "name": "HTTP Request",
+      "onError": "continueRegularOutput",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        32,
+        224
+      ],
+      "id": "a81c1383-a8d2-4c34-8efc-ed02b4b5a600",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "name": "CONFIGURE_ME - googlePalmApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.body.numero + '_sublizen_v1' }}",
+        "contextWindowLength": 12
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        256,
+        240
+      ],
+      "id": "61462b72-2683-4bfe-80f3-161cd47fa5be",
+      "name": "Simple Memory",
+      "credentials": {
+        "postgres": {
+          "name": "CONFIGURE_ME - postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Herramienta del taller SubliZen. Usala para toda operación o dato real.\n- listar_precios: sin parámetros.\n- cotizar: parametro=producto; parametro2=cantidad.\n- crear_presupuesto_cliente: parametro=producto; parametro2=cantidad; parametro3=nombre; parametro4=WhatsApp.\n- confirmar_presupuesto_cliente: parametro=ID presupuesto; parametro2=WhatsApp.\n- registrar_comprobante_transferencia: parametro=ID pedido; parametro2=ruta local exacta de adjunto_path; parametro3=WhatsApp; parametro4=monto declarado opcional.\n- guardar_email_y_enviar_comprobante: parametro=ID; parametro2=email; parametro3=WhatsApp.\n- reintentar_comprobante: parametro=ID.\n- consultar_pedido_cliente: parametro=ID; parametro2=WhatsApp.\n- responder_diseno_cliente: parametro=ID; parametro2=aprobar/cambios; parametro3=comentario; parametro4=WhatsApp.\n- configurar_entrega_cliente: parametro=ID; parametro2=retiro/envío; parametro3=\"dirección | día/franja horaria\"; parametro4=WhatsApp.\n- solicitar_atencion_humana: parametro=WhatsApp; parametro2=nombre; parametro3=motivo.\n- registrar_satisfaccion_cliente: parametro=ID; parametro2=puntuación 1-5; parametro3=comentario; parametro4=WhatsApp.\nNunca apruebes ni rechaces pagos desde el chat del cliente. Recibir un archivo no acredita dinero.\nNo inventes valores. Leé status y message antes de responder.",
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar/sublizen",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "options": {},
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "accion",
+              "value": "={{ $fromAI('accion', 'Acción exacta', 'string') }}"
+            },
+            {
+              "name": "parametro",
+              "value": "={{ $fromAI('parametro', 'Parámetro principal', 'string') }}"
+            },
+            {
+              "name": "parametro2",
+              "value": "={{ $fromAI('parametro2', 'Segundo parámetro', 'string') }}"
+            },
+            {
+              "name": "parametro3",
+              "value": "={{ $fromAI('parametro3', 'Tercer parámetro', 'string') }}"
+            },
+            {
+              "name": "parametro4",
+              "value": "={{ $fromAI('parametro4', 'Cuarto parámetro', 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        512,
+        240
+      ],
+      "id": "5524d0ac-b322-424e-a24a-738493ad727c",
+      "name": "HTTP Request1",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const errorRaw = $json.error ?? $json.errorMessage ?? '';\nconst errorText = typeof errorRaw === 'string'\n  ? errorRaw.trim()\n  : String(errorRaw?.description ?? errorRaw?.message ?? '').trim();\nconst salida = String($json.output ?? $json.text ?? '').trim();\nconst proveedorFallo = /429|quota|cuota|rate limit|too many requests|503|service unavailable|high demand|saturad/i.test(`${errorText} ${salida}`);\nreturn [{ json: {\n  ...$json,\n  necesita_respaldo: Boolean(errorText || !salida || proveedorFallo),\n  respuesta_primaria: salida\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        0
+      ],
+      "id": "3a99b6dd-a36a-4cbf-84a8-1c9100d09887",
+      "name": "Detectar respaldo SubliZen",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2ca01396-190c-44fd-b77a-ec9d63a3e66c",
+              "leftValue": "={{ $json.necesita_respaldo }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        688,
+        0
+      ],
+      "id": "305373bc-55b8-41a4-895a-b39f2f00c285",
+      "name": "¿Usar modelo de respaldo?",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.mensaje + '\\n\\n[Contexto interno: WhatsApp=' + $json.body.numero + '; nombre=' + ($json.body.nombre || 'Cliente') + '; adjunto_path=' + ($json.body.adjunto_path || '') + '; adjunto_mime=' + ($json.body.adjunto_mime || '') + '; adjunto_nombre=' + ($json.body.adjunto_nombre || '') + '; adjunto_error=' + ($json.body.adjunto_error || '') + ']' }}",
+        "options": {
+          "systemMessage": "Sos Rebecca SubliZen, la asistente comercial del taller de sublimación. Esta identidad está separada de Rebecca personal: nunca hablás de la PC de Usuario ni ejecutás controles personales.\n\nAtendé en español, breve, amable y profesional. No inventes precios, enlaces, estados, pagos ni envíos. Para cualquier dato del taller usá la herramienta y basá la respuesta en su resultado.\n\nFLUJO DE COMPRA Y SEÑA DEL 50%:\n1. Cotizá con crear_presupuesto_cliente: parametro=producto; parametro2=cantidad; parametro3=nombre; parametro4=WhatsApp actual. El servidor calcula el precio: nunca copies un monto inventado por el modelo.\n2. Mostrá el resumen numerado y pedí confirmación expresa. Recién cuando el cliente acepte ese presupuesto, usá confirmar_presupuesto_cliente: parametro=ID presupuesto; parametro2=WhatsApp actual. Informá el ID del pedido y la seña exacta devuelta.\n3. Pedí dos cosas: un correo válido y la captura o PDF de la transferencia. Si llega el correo, usá guardar_email_y_enviar_comprobante: parametro=ID; parametro2=email; parametro3=WhatsApp actual. Guardar el correo NO acredita el pago.\n4. Sólo si el contexto interno contiene adjunto_path con una ruta no vacía, usá registrar_comprobante_transferencia: parametro=ID; parametro2=ruta local exacta; parametro3=WhatsApp actual; parametro4=monto únicamente si el cliente lo escribió. No inventes ni reconstruyas rutas.\n5. Un comprobante recibido NO demuestra que el dinero entró. Decile que quedó pendiente de verificación. Jamás llames aprobar_comprobante_transferencia o registrar_sena_cliente desde un chat de cliente: la aprobación es exclusiva del dueño desde el dashboard.\n6. Después de la aprobación, el servidor emite automáticamente el comprobante por correo y WhatsApp si ya tiene el correo. Si luego falta el correo, guardalo con guardar_email_y_enviar_comprobante.\n7. Si un canal falla, no vuelvas a crear el pedido ni prometas que llegó: usá reintentar_comprobante con el ID. El servidor evita duplicados.\n\nPEDIDO, DISEÑO Y ENTREGA:\n- Para consultar avance usá consultar_pedido_cliente: parametro=ID; parametro2=WhatsApp actual. Nunca consultes pedidos ajenos.\n- Si el cliente aprueba o pide cambios de una muestra, usá responder_diseno_cliente: parametro=ID; parametro2=aprobar/cambios; parametro3=comentario; parametro4=WhatsApp. La producción no empieza sin aprobación.\n- Para retiro o envío usá configurar_entrega_cliente: parametro=ID; parametro2=retiro/envío; parametro3=\"dirección | día/franja horaria\" (dirección vacía si retira); parametro4=WhatsApp.\n- Si el cliente pide una persona, está enojado, hay un reclamo, o no podés resolverlo con certeza, usá solicitar_atencion_humana: parametro=WhatsApp; parametro2=nombre; parametro3=motivo. Después informá que una persona continuará el chat.\n- Tras una entrega, si responde una valoración, usá registrar_satisfaccion_cliente: parametro=ID; parametro2=puntuación 1-5; parametro3=comentario; parametro4=WhatsApp.\n\nADJUNTOS:\n- Si adjunto_error no está vacío, explicá el motivo y pedí JPG, PNG, WEBP o PDF de hasta 12 MB.\n- Si llega una imagen/PDF sin un pedido identificable en la conversación, pedí el ID antes de asociarlo.\n- Nunca trates una imagen cualquiera como pago acreditado ni expongas la ruta local al cliente.\n\nEl PDF emitido es un COMPROBANTE DE SEÑA, no una factura fiscal electrónica. Si el cliente pide factura fiscal, reuní sus datos y avisá que el equipo debe emitirla por el sistema fiscal correspondiente.\n\nPara consultar precios usá listar_precios/cotizar. Para consultar un pedido, pedí el ID. Nunca marques pagos basándote en una suposición. Nunca muestres datos de otros clientes ni uses herramientas personales.",
+          "maxIterations": 6
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        896,
+        -128
+      ],
+      "id": "d2ecf33c-7065-4648-a29d-36d106da98ab",
+      "name": "AI Agent respaldo",
+      "onError": "continueRegularOutput",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        800,
+        -352
+      ],
+      "id": "e6c8bea5-38fd-4e60-984f-c76ba2260f20",
+      "name": "Groq respaldo SubliZen",
+      "credentials": {
+        "groqApi": {
+          "name": "CONFIGURE_ME - groqApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const errorRaw = $json.error ?? $json.errorMessage ?? '';\nconst errorText = typeof errorRaw === 'string'\n  ? errorRaw.trim()\n  : String(errorRaw?.description ?? errorRaw?.message ?? '').trim();\nlet respuesta = String($json.output ?? $json.respuesta_primaria ?? $json.text ?? '').trim();\nif (errorText || !respuesta || /429|quota|cuota|rate limit|too many requests|503|service unavailable|high demand|saturad/i.test(`${errorText} ${respuesta}`)) {\n  respuesta = 'En este momento estoy con mucha demanda y no pude procesar bien tu mensaje. No voy a inventar datos ni confirmar pagos: reenviámelo en unos minutos, por favor.';\n}\nif (/^calling\\s+|\\$fromAI|default_api:/i.test(respuesta)) {\n  respuesta = 'Tu pedido no llegó en un formato válido. Repetímelo una vez y lo reviso sin asumir ningún dato.';\n}\nreturn [{ json: { respuesta_cliente: respuesta.slice(0, 3800) } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "7f846dd1-f85b-468e-84eb-d78db407d447",
+      "name": "Preparar respuesta SubliZen",
+      "credentials": {}
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Detectar respaldo SubliZen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "AI Agent respaldo",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "AI Agent respaldo",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detectar respaldo SubliZen": {
+      "main": [
+        [
+          {
+            "node": "¿Usar modelo de respaldo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Usar modelo de respaldo?": {
+      "main": [
+        [
+          {
+            "node": "AI Agent respaldo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar respuesta SubliZen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent respaldo": {
+      "main": [
+        [
+          {
+            "node": "Preparar respuesta SubliZen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar respuesta SubliZen": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq respaldo SubliZen": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent respaldo",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "nodeGroups": []
+}

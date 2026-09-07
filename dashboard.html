@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>REBECCA_CORE :: Terminal de Operaciones</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e14;
+    --panel: #10161f;
+    --panel-border: #1d2733;
+    --cyan: #4ce0d2;
+    --magenta: #ff3d81;
+    --amber: #ffb238;
+    --text: #d8e4e8;
+    --text-dim: #5b6b74;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(76, 224, 210, 0.015) 0px,
+      rgba(76, 224, 210, 0.015) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    z-index: 100;
+  }
+
+  header {
+    border-bottom: 1px solid var(--panel-border);
+    padding: 18px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(180deg, #0d1219 0%, var(--bg) 100%);
+  }
+
+  .brand {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--cyan);
+    letter-spacing: 1px;
+  }
+  .brand .cursor {
+    display: inline-block;
+    width: 9px; height: 18px;
+    background: var(--cyan);
+    margin-left: 6px;
+    animation: blink 1.1s steps(1) infinite;
+    vertical-align: -3px;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .dot.offline { background: var(--magenta); box-shadow: 0 0 8px var(--magenta); }
+  @keyframes pulse { 50% { opacity: 0.4; } }
+
+  #reloj { color: var(--text); }
+
+  main { padding: 28px; max-width: 1200px; margin: 0 auto; }
+
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .kpi {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-left: 3px solid var(--cyan);
+    padding: 16px 18px;
+  }
+  .kpi.alert { border-left-color: var(--magenta); }
+  .kpi.warn { border-left-color: var(--amber); }
+  .kpi-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .kpi-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .kpi.alert .kpi-value { color: var(--magenta); }
+  .kpi.warn .kpi-value { color: var(--amber); }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    margin-bottom: 22px;
+  }
+  .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--panel-border);
+    background: #0d131b;
+  }
+  .panel-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: var(--cyan);
+    text-transform: uppercase;
+  }
+  .panel-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    padding: 10px 16px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  td {
+    padding: 10px 16px;
+    font-size: 15px;
+    border-bottom: 1px solid #161e29;
+  }
+  tr:last-child td { border-bottom: none; }
+  .num { font-family: 'JetBrains Mono', monospace; text-align: right; }
+  .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+  .tag.deuda { background: rgba(255, 61, 129, 0.12); color: var(--magenta); }
+  .tag.bajo { background: rgba(255, 178, 56, 0.12); color: var(--amber); }
+  .tag.ok { background: rgba(76, 224, 210, 0.1); color: var(--cyan); }
+  .tag.pendiente { background: rgba(255, 178, 56, 0.12); color: var(--amber); }
+  .tag.en_proceso { background: rgba(76, 224, 210, 0.1); color: var(--cyan); }
+  .tag.listo { background: rgba(129, 140, 248, 0.14); color: #a5b4fc; }
+  .tag.entregado { background: rgba(61, 220, 132, 0.12); color: #3ddc84; }
+  .tag.cancelado { background: rgba(255, 61, 129, 0.12); color: var(--magenta); }
+  .tag.aprobado { background: rgba(61, 220, 132, 0.12); color: #3ddc84; }
+  .tag.rechazado { background: rgba(255, 61, 129, 0.12); color: var(--magenta); }
+  .tag.sin_comprobante { background: rgba(91, 107, 116, 0.14); color: #91a2ab; }
+  .tag.monto_inconsistente { background: rgba(255, 61, 129, 0.12); color: #ff9fbd; }
+  .diagnostico { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; padding:14px 16px; }
+  .diag-item { border:1px solid var(--panel-border); padding:10px 12px; background:#0b1118; }
+  .diag-label { color:var(--text-dim); font-size:11px; text-transform:uppercase; letter-spacing:1px; }
+  .diag-value { margin-top:4px; font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--cyan); }
+  .diag-value.warn { color:var(--amber); }
+  .diag-value.error { color:var(--magenta); }
+
+  .panel > div[id^="tabla-"] { overflow-x: auto; }
+  .panel table { min-width: 680px; }
+
+  .empty {
+    padding: 24px 16px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .acciones { display: flex; gap: 6px; justify-content: flex-end; }
+  .btn-icon {
+    background: transparent;
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    width: 30px; height: 30px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-icon:hover { border-color: var(--cyan); color: var(--cyan); }
+  .btn-icon.check:hover { border-color: #3ddc84; color: #3ddc84; }
+  .btn-icon.delete:hover { border-color: var(--magenta); color: var(--magenta); }
+
+  /* --- MODALES --- */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(5, 7, 10, 0.75);
+    backdrop-filter: blur(2px);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.abierto { display: flex; }
+  .modal-box {
+    background: var(--panel);
+    border: 1px solid var(--cyan);
+    box-shadow: 0 0 24px rgba(76, 224, 210, 0.15);
+    width: 90%;
+    max-width: 420px;
+    padding: 0;
+  }
+  .modal-head {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--panel-border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-head h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--cyan);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .modal-close { background: none; border: none; color: var(--text-dim); font-size: 18px; cursor: pointer; }
+  .modal-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 5px;
+  }
+  .field input, .field select {
+    width: 100%;
+    background: #0a0e14;
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 8px 10px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    border-radius: 2px;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--cyan); }
+  .modal-foot {
+    padding: 14px 18px;
+    border-top: 1px solid var(--panel-border);
+    display: flex; justify-content: flex-end; gap: 10px;
+  }
+  .btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    padding: 9px 16px;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 1px solid var(--panel-border);
+    background: transparent;
+    color: var(--text-dim);
+  }
+  .btn.primary { border-color: var(--cyan); color: var(--cyan); }
+  .btn.primary:hover { background: rgba(76, 224, 210, 0.1); }
+  .btn.danger { border-color: var(--magenta); color: var(--magenta); }
+  .btn.danger:hover { background: rgba(255, 61, 129, 0.1); }
+  .btn:hover { color: var(--text); }
+
+  .toast {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    max-width: min(420px, calc(100vw - 40px));
+    padding: 12px 16px;
+    border: 1px solid var(--cyan);
+    background: #0d131b;
+    color: var(--text);
+    box-shadow: 0 0 24px rgba(76, 224, 210, 0.15);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    z-index: 400;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .toast.visible { opacity: 1; transform: translateY(0); }
+  .toast.error { border-color: var(--magenta); color: #ff9fbd; }
+
+  @media (max-width: 640px) {
+    main { padding: 16px; }
+    header { padding: 14px 16px; flex-direction: column; gap: 8px; align-items: flex-start; }
+    td, th { padding: 8px 10px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">REBECCA_CORE<span class="cursor"></span></div>
+  <div class="status">
+    <span class="dot" id="dot"></span>
+    <span id="conexion">conectando...</span>
+    <span id="reloj"></span>
+  </div>
+</header>
+
+<main>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="panel">
+    <div class="panel-head"><span class="panel-title">Estado del sistema</span><span class="panel-count">diagnóstico en vivo</span></div>
+    <div class="diagnostico" id="diagnostico"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span class="panel-title">Atención y alertas</span><span class="panel-count" id="count-alertas"></span></div>
+    <div id="tabla-alertas"></div>
+    <div id="tabla-atencion-humana" style="margin-top:12px"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><span class="panel-title">Presupuestos por confirmar</span><span class="panel-count" id="count-presupuestos"></span></div>
+    <div id="tabla-presupuestos"></div>
+  </div>
+
+  <!-- PANEL PEDIDOS -->
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">Trabajos pendientes</span>
+      <span class="panel-count" id="count-pedidos"></span>
+    </div>
+    <div id="tabla-pedidos"></div>
+  </div>
+
+  <!-- PANEL DEUDORES -->
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">Deudores</span>
+      <span class="panel-count" id="count-deudores"></span>
+    </div>
+    <div id="tabla-deudores"></div>
+  </div>
+
+  <!-- PANEL RUTINAS (NUEVO) -->
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">Rutinas Semanales</span>
+      <span class="panel-count" id="count-rutinas"></span>
+    </div>
+    <div id="tabla-rutinas"></div>
+  </div>
+
+  <!-- PANEL RECORDATORIOS ÚNICOS -->
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">Recordatorios Programados</span>
+      <span class="panel-count" id="count-recordatorios"></span>
+    </div>
+    <div id="tabla-recordatorios"></div>
+  </div>
+
+  <!-- PANEL INSUMOS -->
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">Stock de insumos</span>
+      <div>
+        <span class="panel-count" id="count-insumos" style="margin-right: 10px;"></span>
+        <button class="btn primary" style="padding: 4px 8px; font-size: 10px;" onclick="abrirModalInsumo()">+ NUEVO</button>
+      </div>
+    </div>
+    <div id="tabla-insumos"></div>
+  </div>
+
+  <!-- PANEL PRECIOS -->
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">Lista de precios</span>
+      <span class="panel-count" id="count-precios"></span>
+    </div>
+    <div id="tabla-precios"></div>
+  </div>
+</main>
+
+<!-- MODAL EDICIÓN PEDIDOS / DEUDORES -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modal-titulo">Editar pedido</h3>
+      <button class="modal-close" onclick="cerrarModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Estado</label>
+        <select id="edit-estado">
+          <option value="pendiente">Pendiente</option>
+          <option value="esperando_sena">Esperando seña</option>
+          <option value="diseno_pendiente">Preparando diseño</option>
+          <option value="en_proceso">En proceso</option>
+          <option value="listo">Listo para entregar</option>
+          <option value="entregado">Entregado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </div>
+      <div class="field"><label>Qué falta</label><input type="text" id="edit-tareas"></div>
+      <div class="field"><label>Fecha de entrega</label><input type="date" id="edit-fecha"></div>
+      <div class="field"><label>Precio total</label><input type="number" min="0" step="0.01" id="edit-precio"></div>
+      <div class="field"><label>Seña pagada</label><input type="number" min="0" step="0.01" id="edit-sena"></div>
+      <div class="field"><label>Estado del diseño</label><select id="edit-diseno"><option value="pendiente">Pendiente</option><option value="enviado">Enviado al cliente</option><option value="cambios_solicitados">Cambios solicitados</option><option value="aprobado">Aprobado</option><option value="no_requiere">No requiere</option></select></div>
+      <div class="field"><label>Entrega</label><select id="edit-modalidad"><option value="a_confirmar">A confirmar</option><option value="retiro">Retiro por el local</option><option value="envio">Envío</option></select></div>
+      <div class="field"><label>Dirección</label><input type="text" id="edit-direccion"></div>
+      <div class="field"><label>Turno / franja de entrega</label><input type="text" id="edit-turno" placeholder="Ej: viernes de 15 a 18"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn primary" onclick="guardarPedido()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDICIÓN PRODUCTO -->
+<div class="modal-overlay" id="modal-producto">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modal-prod-titulo">Editar producto</h3>
+      <button class="modal-close" onclick="cerrarModalProducto()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Precio de venta</label><input type="number" id="edit-prod-precio"></div>
+      <div class="field"><label>Costo</label><input type="number" id="edit-prod-costo"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="cerrarModalProducto()">Cancelar</button>
+      <button class="btn primary" onclick="guardarProducto()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDICIÓN RUTINA (NUEVO) -->
+<div class="modal-overlay" id="modal-rutina">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modal-rut-titulo">Editar Rutina</h3>
+      <button class="modal-close" onclick="cerrarModalRutina()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Día de la semana</label>
+        <select id="edit-rut-dia">
+          <option value="0">Lunes</option><option value="1">Martes</option><option value="2">Miércoles</option>
+          <option value="3">Jueves</option><option value="4">Viernes</option><option value="5">Sábado</option><option value="6">Domingo</option>
+        </select>
+      </div>
+      <div class="field"><label>Hora (HH:MM)</label><input type="time" id="edit-rut-hora"></div>
+      <div class="field"><label>Mensaje / Acción</label><input type="text" id="edit-rut-mensaje"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="cerrarModalRutina()">Cancelar</button>
+      <button class="btn primary" onclick="guardarRutina()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDICIÓN INSUMO -->
+<div class="modal-overlay" id="modal-insumo">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modal-ins-titulo">Agregar/Editar Insumo</h3>
+      <button class="modal-close" onclick="cerrarModalInsumo()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Nombre del insumo</label><input type="text" id="edit-ins-nombre"></div>
+      <div class="field"><label>Cantidad actual</label><input type="number" step="0.1" id="edit-ins-cantidad"></div>
+      <div class="field"><label>Unidad (ej: unidades, litros, metros)</label><input type="text" id="edit-ins-unidad" value="unidades"></div>
+      <div class="field"><label>Alerta Mínima</label><input type="number" step="0.1" id="edit-ins-alerta"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="cerrarModalInsumo()">Cancelar</button>
+      <button class="btn primary" onclick="guardarInsumo()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const API_BASE = window.location.protocol === "file:" ? "http://127.0.0.1:8000" : window.location.origin;
+const DASHBOARD_TOKEN = new URLSearchParams(window.location.search).get("token") || "";
+let pedidosCache = [];
+let deudoresCache = [];
+let productosCache = [];
+let rutinasCache = [];
+let alertasCache = [];
+let atencionesCache = [];
+let insumosCache = [];
+let recordatoriosCache = [];
+const diasStr = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+function fmtMoney(n) { return "$" + Number(n || 0).toLocaleString("es-AR", { maximumFractionDigits: 0 }); }
+function tablaVacia(msg) { return `<div class="empty">${msg}</div>`; }
+function etiquetaEstado(estado) {
+  const clave = ["pendiente", "esperando_sena", "diseno_pendiente", "en_proceso", "listo", "entregado", "cancelado"].includes(estado) ? estado : "pendiente";
+  const texto = { pendiente: "Pendiente", esperando_sena: "Esperando seña", diseno_pendiente: "Preparando diseño", en_proceso: "En proceso", listo: "Listo para entregar", entregado: "Entregado", cancelado: "Cancelado" }[clave];
+  return `<span class="tag ${clave}">${texto}</span>`;
+}
+function escapeHTML(valor) {
+  return String(valor ?? "").replace(/[&<>'"]/g, caracter => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
+  })[caracter]);
+}
+
+let toastTimer;
+function mostrarAviso(mensaje, esError = false) {
+  const toast = document.getElementById("toast");
+  toast.textContent = mensaje;
+  toast.classList.toggle("error", esError);
+  toast.classList.add("visible");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove("visible"), 3500);
+}
+
+async function apiFetch(ruta, opciones = {}) {
+  const headers = { ...(opciones.headers || {}) };
+  if (DASHBOARD_TOKEN) headers["X-Dashboard-Token"] = DASHBOARD_TOKEN;
+  const respuesta = await fetch(API_BASE + ruta, { ...opciones, headers });
+  let data = {};
+  try { data = await respuesta.json(); } catch (_) {}
+  if (!respuesta.ok || data.status === "error") {
+    throw new Error(data.detail || data.message || `Error ${respuesta.status}`);
+  }
+  return data;
+}
+
+function renderDiagnostico(d) {
+  const items = [
+    ["Rebecca Core", d.core, d.core === "activo" ? "" : "error"],
+    ["Correo", d.correo, d.correo === "configurado" ? "" : "error"],
+    ["WhatsApp", d.whatsapp, d.whatsapp === "conectado" ? "" : "error"],
+    ["URL pública", d.url_estable === "si" ? "estable" : "temporal (ngrok)", d.url_estable === "si" ? "" : "warn"],
+    ["Pagos por revisar", d.comprobantes_pendientes, d.comprobantes_pendientes ? "warn" : ""],
+    ["Envíos con error", d.envios_fallidos, d.envios_fallidos ? "error" : ""]
+  ];
+  document.getElementById("diagnostico").innerHTML = items.map(([label, value, clase]) =>
+    `<div class="diag-item"><div class="diag-label">${escapeHTML(label)}</div><div class="diag-value ${clase}">${escapeHTML(value)}</div></div>`
+  ).join("");
+}
+
+function etiquetaPago(p) {
+  const estado = p.comprobante_pago_estado || "sin_comprobante";
+  const texto = {
+    sin_comprobante: "Sin archivo", pendiente: "Por revisar", aprobado: "Aprobado",
+    rechazado: "Rechazado", monto_inconsistente: "Revisar monto"
+  }[estado] || estado;
+  return `<span class="tag ${estado}" title="${escapeHTML(p.comprobante_pago_observaciones || p.comprobante_pago_recibido || '')}">${escapeHTML(texto)}</span>`;
+}
+
+function renderKPIs(r) {
+  document.getElementById("kpis").innerHTML = `
+    <div class="kpi"><div class="kpi-label">Pendientes</div><div class="kpi-value">${r.pedidos_pendientes}</div></div>
+    <div class="kpi"><div class="kpi-label">Facturado este mes</div><div class="kpi-value">${fmtMoney(r.facturado_mes)}</div></div>
+    <div class="kpi ${r.total_adeudado > 0 ? "alert" : ""}"><div class="kpi-label">Total adeudado</div><div class="kpi-value">${fmtMoney(r.total_adeudado)}</div></div>
+    <div class="kpi ${r.insumos_bajos > 0 ? "warn" : ""}"><div class="kpi-label">Insumos bajos</div><div class="kpi-value">${r.insumos_bajos}</div></div>
+  `;
+}
+
+function renderAtencion(alertas, atenciones) {
+  alertasCache = alertas || [];
+  atencionesCache = atenciones || [];
+  document.getElementById("count-alertas").textContent = `${alertasCache.length} alertas · ${atencionesCache.length} chats humanos`;
+  document.getElementById("tabla-alertas").innerHTML = alertasCache.length ? `<table><thead><tr><th>Prioridad</th><th>Alerta</th><th></th></tr></thead><tbody>${alertasCache.map(a => `<tr><td><span class="tag ${a.prioridad === 'alta' ? 'bajo' : 'pendiente'}">${escapeHTML(a.prioridad)}</span></td><td>${escapeHTML(a.mensaje)}</td><td>${a.pedido_id ? `<button class="btn-icon" onclick="abrirModal(${a.pedido_id})">✎</button>` : ''}</td></tr>`).join("")}</tbody></table>` : tablaVacia("No hay alertas urgentes.");
+  document.getElementById("tabla-atencion-humana").innerHTML = atencionesCache.length ? `<table><thead><tr><th>Atención humana</th><th>WhatsApp</th><th>Desde</th><th></th></tr></thead><tbody>${atencionesCache.map(c => `<tr><td>${escapeHTML(c.nombre)}</td><td>${escapeHTML(c.whatsapp)}</td><td>${escapeHTML(c.modo_humano_desde || '—')}</td><td><button class="btn" onclick="cambiarAtencion(${c.id},false)">Devolver a Rebecca</button></td></tr>`).join("")}</tbody></table>` : "";
+}
+
+function renderPresupuestos(presupuestos) {
+  const lista = presupuestos || [];
+  document.getElementById("count-presupuestos").textContent = lista.length;
+  document.getElementById("tabla-presupuestos").innerHTML = lista.length ? `<table><thead><tr><th>ID</th><th>Cliente</th><th>Producto</th><th>Cantidad</th><th>Total</th><th>Vence</th></tr></thead><tbody>${lista.map(p => `<tr><td>#${p.id}</td><td>${escapeHTML(p.cliente)}</td><td>${escapeHTML(p.producto)}</td><td>${escapeHTML(p.cantidad)}</td><td>${fmtMoney(p.total)}</td><td>${escapeHTML(p.vence_en)}</td></tr>`).join("")}</tbody></table>` : tablaVacia("No hay presupuestos esperando confirmación.");
+}
+
+async function cambiarAtencion(clienteId, modoHumano) {
+  try {
+    const data = await apiFetch("/dashboard/cambiar_atencion", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({cliente_id:clienteId, modo_humano:modoHumano})});
+    mostrarAviso(data.message); await cargarDatos();
+  } catch (error) { mostrarAviso(error.message, true); }
+}
+
+async function verHistorial(id) {
+  try {
+    const data = await apiFetch(`/dashboard/historial/${id}`);
+    const texto = data.eventos.length ? data.eventos.map(e => `${e.creado_en} · ${e.actor}\n${e.descripcion}`).join("\n\n") : "Todavía no hay movimientos registrados.";
+    alert(`Historial del pedido #${id}\n\n${texto}`);
+  } catch (error) { mostrarAviso(error.message, true); }
+}
+
+function enviarDiseno(id) {
+  const selector = document.createElement("input");
+  selector.type = "file";
+  selector.accept = "image/jpeg,image/png,image/webp,application/pdf";
+  selector.onchange = async () => {
+    const archivo = selector.files?.[0];
+    if (!archivo) return;
+    if (archivo.size > 12 * 1024 * 1024) return mostrarAviso("El diseño supera 12 MB.", true);
+    const mensaje = prompt("Mensaje para acompañar la muestra:", `Muestra de diseño del pedido #${id}. Respondé APROBAR o indicá los cambios que necesitás.`);
+    if (mensaje === null) return;
+    try {
+      const contenido = await new Promise((resolve, reject) => { const lector = new FileReader(); lector.onload = () => resolve(lector.result); lector.onerror = reject; lector.readAsDataURL(archivo); });
+      const data = await apiFetch("/dashboard/enviar_diseno", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({pedido_id:id,nombre:archivo.name,mime:archivo.type,contenido_base64:contenido,mensaje})});
+      mostrarAviso(data.message); await cargarDatos();
+    } catch (error) { mostrarAviso(error.message || "No se pudo enviar el diseño.", true); }
+  };
+  selector.click();
+}
+
+function renderPedidos(pedidos) {
+  pedidosCache = pedidos;
+  document.getElementById("count-pedidos").textContent = pedidos.length + " activos";
+  if (!pedidos.length) return document.getElementById("tabla-pedidos").innerHTML = tablaVacia("No hay trabajos pendientes.");
+  const filas = pedidos.map(p => `<tr>
+      <td class="num">#${p.id}</td><td>${escapeHTML(p.producto)}</td><td>${escapeHTML(p.cliente || "—")}</td>
+      <td>${etiquetaEstado(p.estado)}</td><td>${escapeHTML(p.tareas_pendientes || "—")}<br><span class="panel-count">Diseño: ${escapeHTML(p.diseno_estado || 'pendiente')} · ${escapeHTML(p.modalidad_entrega || 'a confirmar')}</span></td><td>${escapeHTML(p.fecha_entrega || "sin fecha")}</td>
+      <td class="num">${fmtMoney(p.precio_total)}</td><td class="num">${fmtMoney(Math.max(0, Number(p.precio_total || 0) - Number(p.sena_pagada || 0)))}</td>
+      <td>${etiquetaPago(p)}</td>
+      <td><span title="Correo" class="tag ${p.comprobante_email === 'enviado' ? 'entregado' : 'pendiente'}">E ${p.comprobante_email === 'enviado' ? '✓' : '…'}</span> <span title="WhatsApp" class="tag ${p.comprobante_whatsapp === 'enviado' ? 'entregado' : 'pendiente'}">W ${p.comprobante_whatsapp === 'enviado' ? '✓' : '…'}</span></td>
+      <td><div class="acciones">
+          ${p.comprobante_pago_id ? `<button class="btn-icon" title="Ver comprobante de transferencia" onclick="abrirComprobante(${p.comprobante_pago_id})">▣</button>` : ''}
+          ${['pendiente','monto_inconsistente'].includes(p.comprobante_pago_estado) ? `<button class="btn-icon check" title="Aprobar pago" onclick="aprobarComprobante(${p.id},${p.comprobante_pago_id})">$</button><button class="btn-icon delete" title="Rechazar comprobante" onclick="rechazarComprobante(${p.id},${p.comprobante_pago_id})">×</button>` : ''}
+          ${(p.comprobante_email === 'error' || p.comprobante_whatsapp === 'error') ? `<button class="btn-icon" title="Reintentar envío" onclick="reintentarComprobante(${p.id})">↻</button>` : ''}
+          ${p.seguimiento_url ? `<button class="btn-icon" title="Abrir seguimiento" aria-label="Abrir seguimiento ${p.id}" onclick="abrirSeguimiento(${p.id})">↗</button>` : ''}
+          <button class="btn-icon" title="Enviar muestra de diseño" onclick="enviarDiseno(${p.id})">D</button>
+          <button class="btn-icon" title="Ver historial" onclick="verHistorial(${p.id})">≡</button>
+          <button class="btn-icon ${p.modo_humano ? 'check' : ''}" title="${p.modo_humano ? 'Devolver a Rebecca' : 'Tomar conversación'}" onclick="cambiarAtencion(${p.cliente_id},${p.modo_humano ? 'false' : 'true'})">${p.modo_humano ? 'R' : 'H'}</button>
+          <button class="btn-icon check" title="Marcar como entregado" aria-label="Marcar pedido ${p.id} como entregado" onclick="marcarEntregado(${p.id})">✓</button>
+          <button class="btn-icon" title="Editar pedido" aria-label="Editar pedido ${p.id}" onclick="abrirModal(${p.id})">✎</button>
+      </div></td></tr>`).join("");
+  document.getElementById("tabla-pedidos").innerHTML = `<table><thead><tr><th>ID</th><th>Producto</th><th>Cliente</th><th>Estado</th><th>Falta</th><th>Entrega</th><th class="num">Total</th><th class="num">Saldo</th><th>Pago</th><th>Recibo</th><th></th></tr></thead><tbody>${filas}</tbody></table>`;
+}
+
+function abrirComprobante(id) {
+  const token = DASHBOARD_TOKEN ? `?token=${encodeURIComponent(DASHBOARD_TOKEN)}` : "";
+  window.open(`${API_BASE}/dashboard/comprobante/${id}${token}`, "_blank", "noopener");
+}
+
+async function aprobarComprobante(pedidoId, comprobanteId) {
+  if (!confirm(`¿Verificaste en tu cuenta que ingresó la seña del pedido #${pedidoId}? Esta acción emitirá el recibo.`)) return;
+  try {
+    const data = await apiFetch("/dashboard/aprobar_comprobante", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ pedido_id:pedidoId, comprobante_id:comprobanteId })
+    });
+    mostrarAviso(data.message || "Pago aprobado."); await cargarDatos();
+  } catch (error) { mostrarAviso(error.message, true); }
+}
+
+async function rechazarComprobante(pedidoId, comprobanteId) {
+  const motivo = prompt("Motivo del rechazo (opcional):", "No se pudo verificar la transferencia") ?? null;
+  if (motivo === null) return;
+  try {
+    const data = await apiFetch("/dashboard/rechazar_comprobante", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ pedido_id:pedidoId, comprobante_id:comprobanteId, observaciones:motivo })
+    });
+    mostrarAviso(data.message); await cargarDatos();
+  } catch (error) { mostrarAviso(error.message, true); }
+}
+
+async function reintentarComprobante(id) {
+  try {
+    const data = await apiFetch("/dashboard/reintentar_comprobante", {
+      method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ id })
+    });
+    mostrarAviso(data.message); await cargarDatos();
+  } catch (error) { mostrarAviso(error.message, true); }
+}
+
+function renderDeudores(deudores) {
+  deudoresCache = deudores || [];
+  document.getElementById("count-deudores").textContent = deudores.length;
+  if (!deudores.length) return document.getElementById("tabla-deudores").innerHTML = tablaVacia("Nadie debe plata. Todo cobrado.");
+  const filas = deudores.map(d => `<tr>
+      <td>${escapeHTML(d.cliente)}</td><td>#${d.pedido_id} — ${escapeHTML(d.producto)}</td>
+      <td class="num"><span class="tag deuda">${fmtMoney(d.deuda)}</span></td>
+      <td><div class="acciones"><button class="btn-icon" title="Editar deuda/pedido" aria-label="Editar deuda del pedido ${d.pedido_id}" onclick="abrirModal(${d.pedido_id})">✎</button></div></td>
+    </tr>`).join("");
+  document.getElementById("tabla-deudores").innerHTML = `<table><thead><tr><th>Cliente</th><th>Pedido</th><th>Debe</th><th></th></tr></thead><tbody>${filas}</tbody></table>`;
+}
+
+function renderRutinas(rutinas) {
+  rutinasCache = rutinas || [];
+  document.getElementById("count-rutinas").textContent = rutinasCache.length;
+  if (!rutinasCache.length) return document.getElementById("tabla-rutinas").innerHTML = tablaVacia("No hay rutinas configuradas.");
+  const filas = rutinasCache.map(r => `<tr>
+      <td>${escapeHTML(diasStr[r.dia_semana] || "Día " + r.dia_semana)}</td><td class="num">${escapeHTML(r.hora)}</td><td>${escapeHTML(r.mensaje)}</td>
+      <td><div class="acciones">
+        <button class="btn-icon" onclick="abrirModalRutina(${r.id})">✎</button>
+        <button class="btn-icon delete" onclick="eliminarRutina(${r.id})">🗑️</button>
+      </div></td></tr>`).join("");
+  document.getElementById("tabla-rutinas").innerHTML = `<table><thead><tr><th>Día</th><th>Hora</th><th>Rutina</th><th></th></tr></thead><tbody>${filas}</tbody></table>`;
+}
+
+function renderRecordatorios(recordatorios) {
+  recordatoriosCache = recordatorios || [];
+  document.getElementById("count-recordatorios").textContent = recordatoriosCache.length;
+  
+  if (!recordatoriosCache.length) return document.getElementById("tabla-recordatorios").innerHTML = tablaVacia("No hay recordatorios pendientes.");
+  
+  const filas = recordatoriosCache.map(r => `<tr>
+      <td>${escapeHTML(r.fecha_hora)}</td><td>${escapeHTML(r.mensaje)}</td>
+      <td><div class="acciones">
+        <button class="btn-icon check" title="Marcar como listo" onclick="eliminarRecordatorio(${r.id})">✓</button>
+        <button class="btn-icon delete" title="Borrar" onclick="eliminarRecordatorio(${r.id})">🗑️</button>
+      </div></td></tr>`).join("");
+      
+  document.getElementById("tabla-recordatorios").innerHTML = `<table><thead><tr><th>Fecha y Hora</th><th>Mensaje</th><th></th></tr></thead><tbody>${filas}</tbody></table>`;
+}
+
+async function eliminarRecordatorio(id) {
+  if(!confirm("¿Borramos este recordatorio de la agenda?")) return;
+  try {
+    const data = await apiFetch("/dashboard/eliminar_recordatorio", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id })
+    });
+    mostrarAviso(data.message); await cargarDatos();
+  } catch (error) { mostrarAviso(error.message, true); }
+}
+
+function renderInsumos(insumos) {
+  insumosCache = insumos || [];
+  document.getElementById("count-insumos").textContent = insumosCache.length;
+  if (!insumosCache.length) return document.getElementById("tabla-insumos").innerHTML = tablaVacia("No cargaste insumos todavía.");
+  const filas = insumosCache.map(i => `<tr>
+      <td>${escapeHTML(i.nombre)}</td><td class="num">${escapeHTML(i.cantidad)} ${escapeHTML(i.unidad)}</td><td class="num">${i.cantidad <= i.alerta_minima ? `<span class="tag bajo">BAJO</span>` : `<span class="tag ok">OK</span>`}</td>
+      <td><div class="acciones">
+        <button class="btn-icon" onclick="abrirModalInsumo(${i.id})">✎</button>
+        <button class="btn-icon delete" onclick="eliminarInsumo(${i.id})">🗑️</button>
+      </div></td></tr>`).join("");
+  document.getElementById("tabla-insumos").innerHTML = `<table><thead><tr><th>Insumo</th><th>Cantidad</th><th>Estado</th><th></th></tr></thead><tbody>${filas}</tbody></table>`;
+}
+
+// LOGICA MODAL INSUMOS
+function abrirModalInsumo(id = 0) {
+  const modal = document.getElementById("modal-insumo");
+  modal.dataset.id = id;
+  if (id > 0) {
+    const i = insumosCache.find(x => x.id === id);
+    if (!i) return;
+    document.getElementById("modal-ins-titulo").textContent = "Editar Insumo";
+    document.getElementById("edit-ins-nombre").value = i.nombre;
+    document.getElementById("edit-ins-cantidad").value = i.cantidad;
+    document.getElementById("edit-ins-unidad").value = i.unidad;
+    document.getElementById("edit-ins-alerta").value = i.alerta_minima;
+  } else {
+    document.getElementById("modal-ins-titulo").textContent = "Nuevo Insumo";
+    document.getElementById("edit-ins-nombre").value = "";
+    document.getElementById("edit-ins-cantidad").value = "0";
+    document.getElementById("edit-ins-unidad").value = "unidades";
+    document.getElementById("edit-ins-alerta").value = "5";
+  }
+  modal.classList.add("abierto");
+}
+function cerrarModalInsumo() { document.getElementById("modal-insumo").classList.remove("abierto"); }
+
+async function guardarInsumo() {
+  try {
+    const nombre = document.getElementById("edit-ins-nombre").value.trim();
+    if (!nombre) throw new Error("Escribí el nombre del insumo.");
+    const data = await apiFetch("/dashboard/guardar_insumo", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: parseInt(document.getElementById("modal-insumo").dataset.id) || 0,
+        nombre,
+        cantidad: parseFloat(document.getElementById("edit-ins-cantidad").value) || 0,
+        unidad: document.getElementById("edit-ins-unidad").value.trim() || "unidades",
+        alerta_minima: parseFloat(document.getElementById("edit-ins-alerta").value) || 0
+      })
+    });
+    cerrarModalInsumo(); mostrarAviso(data.message); await cargarDatos();
+  } catch (error) { mostrarAviso(error.message, true); }
+}
+
+async function eliminarInsumo(id) {
+  if(!confirm("¿Seguro que querés volar este insumo del inventario?")) return;
+  try {
+    const data = await apiFetch("/dashboard/eliminar_insumo", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id })
+    });
+    mostrarAviso(data.message); await cargarDatos();
+  } catch (error) { mostrarAviso(error.message, true); }
+}
+
+function renderPrecios(productos) {
+  productosCache = productos;
+  document.getElementById("count-precios").textContent = productos.length;
+  if (!productos.length) return document.getElementById("tabla-precios").innerHTML = tablaVacia("No cargaste precios todavía.");
+  const filas = productos.map(p => `<tr><td>${escapeHTML(p.nombre)}</td><td class="num">${fmtMoney(p.precio_unitario)}</td>
+      <td><div class="acciones">
+          <button class="btn-icon" onclick="abrirModalProducto(${p.id})">✎</button>
+          <button class="btn-icon delete" onclick="eliminarProducto(${p.id})">🗑️</button>
+      </div></td></tr>`).join("");
+  document.getElementById("tabla-precios").innerHTML = `<table><thead><tr><th>Producto</th><th>Precio</th><th></th></tr></thead><tbody>${filas}</tbody></table>`;
+}
+
+// LOGICA MODAL PRODUCTOS
+function abrirModalProducto(id) {
+  const p = productosCache.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById("modal-prod-titulo").textContent = `Editar ${p.nombre}`;
+  document.getElementById("edit-prod-precio").value = p.precio_unitario || 0;
+  document.getElementById("edit-prod-costo").value = p.costo_unitario || 0;
+  document.getElementById("modal-producto").dataset.id = id;
+  document.getElementById("modal-producto").classList.add("abierto");
+}
+function cerrarModalProducto() { document.getElementById("modal-producto").classList.remove("abierto"); }
+async function guardarProducto() {
+  try {
+    const data = await apiFetch("/dashboard/editar_producto", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: parseInt(document.getElementById("modal-producto").dataset.id),
+        precio_unitario: parseFloat(document.getElementById("edit-prod-precio").value) || 0,
+        costo_unitario: parseFloat(document.getElementById("edit-prod-costo").value) || 0
+      })
+    });
+    cerrarModalProducto(); mostrarAviso(data.message); await cargarDatos();
+  } catch (error) { mostrarAviso(error.message, true); }
+}
+async function eliminarProducto(id) {
+  if(!confirm("¿Seguro que querés fulminar este producto de la base de datos?")) return;
+  try {
+    const data = await apiFetch("/dashboard/eliminar_producto", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id })
+    });
+    mostrarAviso(data.message); await cargarDatos();
+  } catch (error) { mostrarAviso(error.message, true); }
+}
+
+// LOGICA MODAL RUTINAS
+function abrirModalRutina(id) {
+  const r = rutinasCache.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById("modal-rut-titulo").textContent = `Editar Rutina #${r.id}`;
+  document.getElementById("edit-rut-dia").value = r.dia_semana;
+  document.getElementById("edit-rut-hora").value = r.hora;
+  document.getElementById("edit-rut-mensaje").value = r.mensaje;
+  document.getElementById("modal-rutina").dataset.id = id;
+  document.getElementById("modal-rutina").classList.add("abierto");
+}
+function cerrarModalRutina() { document.getElementById("modal-rutina").classList.remove("abierto"); }
+async function guardarRutina() {
+  try {
+    const hora = document.getElementById("edit-rut-hora").value;
+    const mensaje = document.getElementById("edit-rut-mensaje").value.trim();
+    if (!hora || !mensaje) throw new Error("Completá la hora y el mensaje de la rutina.");
+    const data = await apiFetch("/dashboard/editar_rutina", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: parseInt(document.getElementById("modal-rutina").dataset.id),
+        dia_semana: parseInt(document.getElementById("edit-rut-dia").value),
+        hora, mensaje
+      })
+    });
+    cerrarModalRutina(); mostrarAviso(data.message); await cargarDatos();
+  } catch (error) { mostrarAviso(error.message, true); }
+}
+async function eliminarRutina(id) {
+  if(!confirm("¿Borramos esta rutina para siempre?")) return;
+  try {
+    const data = await apiFetch("/dashboard/eliminar_rutina", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id })
+    });
+    mostrarAviso(data.message); await cargarDatos();
+  } catch (error) { mostrarAviso(error.message, true); }
+}
+
+// LOGICA MODAL PEDIDOS / DEUDORES
+function abrirModal(id) {
+  const deuda = deudoresCache.find(x => x.pedido_id === id);
+  const p = pedidosCache.find(x => x.id === id) || (deuda ? { ...deuda, id: deuda.pedido_id } : null);
+  if (!p) return;
+  document.getElementById("modal-titulo").textContent = `Editar pedido #${p.id}`;
+  document.getElementById("edit-estado").value = p.estado || "pendiente";
+  document.getElementById("edit-tareas").value = p.tareas_pendientes || "";
+  document.getElementById("edit-fecha").value = p.fecha_entrega || "";
+  document.getElementById("edit-precio").value = p.precio_total || 0;
+  document.getElementById("edit-sena").value = p.sena_pagada || 0;
+  document.getElementById("edit-diseno").value = p.diseno_estado || "pendiente";
+  document.getElementById("edit-modalidad").value = p.modalidad_entrega || "a_confirmar";
+  document.getElementById("edit-direccion").value = p.direccion_entrega || "";
+  document.getElementById("edit-turno").value = p.turno_entrega || "";
+  document.getElementById("modal").dataset.id = id;
+  document.getElementById("modal").classList.add("abierto");
+}
+function abrirSeguimiento(id) {
+  const pedido = pedidosCache.find(x => x.id === id);
+  if (pedido?.seguimiento_url) window.open(pedido.seguimiento_url, "_blank", "noopener");
+}
+function cerrarModal() { document.getElementById("modal").classList.remove("abierto"); }
+async function guardarPedido() {
+  try {
+    const data = await apiFetch("/dashboard/editar_pedido", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: parseInt(document.getElementById("modal").dataset.id),
+        estado: document.getElementById("edit-estado").value,
+        tareas_pendientes: document.getElementById("edit-tareas").value,
+        fecha_entrega: document.getElementById("edit-fecha").value,
+        precio_total: parseFloat(document.getElementById("edit-precio").value) || 0,
+        sena_pagada: parseFloat(document.getElementById("edit-sena").value) || 0,
+        diseno_estado: document.getElementById("edit-diseno").value,
+        modalidad_entrega: document.getElementById("edit-modalidad").value,
+        direccion_entrega: document.getElementById("edit-direccion").value,
+        turno_entrega: document.getElementById("edit-turno").value
+      })
+    });
+    cerrarModal(); mostrarAviso(data.message); await cargarDatos();
+  } catch (error) { mostrarAviso(error.message, true); }
+}
+async function marcarEntregado(id) {
+  if (!confirm(`¿Marcar el pedido #${id} como entregado?`)) return;
+  try {
+    const data = await apiFetch("/dashboard/editar_pedido", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, estado: "entregado", tareas_pendientes: "" })
+    });
+    mostrarAviso(data.message); await cargarDatos();
+  } catch (error) { mostrarAviso(error.message, true); }
+}
+
+async function cargarDatos() {
+  try {
+    const data = await apiFetch("/dashboard/data");
+    renderKPIs(data.resumen);
+    renderDiagnostico(data.diagnostico);
+    renderAtencion(data.alertas, data.atenciones_humanas);
+    renderPresupuestos(data.presupuestos);
+    renderPedidos(data.pedidos);
+    renderDeudores(data.deudores);
+    renderRecordatorios(data.recordatorios);
+    renderRutinas(data.rutinas);
+    renderInsumos(data.insumos);
+    renderPrecios(data.productos);
+    document.getElementById("dot").classList.remove("offline");
+    document.getElementById("conexion").textContent = "conectado";
+  } catch (e) {
+    document.getElementById("dot").classList.add("offline");
+    document.getElementById("conexion").textContent = "sin conexión al servidor";
+    console.error(e);
+  }
+}
+
+function actualizarReloj() { document.getElementById("reloj").textContent = new Date().toLocaleTimeString("es-AR"); }
+cargarDatos(); actualizarReloj();
+setInterval(cargarDatos, 30000); setInterval(actualizarReloj, 1000);
+</script>
+</body>
+</html>

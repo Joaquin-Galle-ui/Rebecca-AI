@@ -1,0 +1,1515 @@
+{
+  "name": "Rebecca AI",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rebecca-receptor",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1296,
+        224
+      ],
+      "id": "d1ae866f-d64f-4b3b-8e61-f002df4fd25f",
+      "name": "Webhook",
+      "disabled": true,
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text || $json.caption || $json.message?.text || $json.message?.caption || \"Mira esto\" }}\n{{ $('Telegram Trigger').item.json.message?.reply_to_message?.text ? \"\\n\\n[CONTEXTO DE RESPUESTA: Usuario está respondiendo específicamente a este mensaje anterior de Rebecca: \" + $('Telegram Trigger').item.json.message.reply_to_message.text + \"]\" : \"\" }}\n{{ $('Telegram Trigger').item.json.message?.photo ? \"\\n\\n[SISTEMA OCULTO: El usuario acaba de adjuntar una foto en Telegram. Su file_id exacto es: \" + $('Telegram Trigger').item.json.message.photo[$('Telegram Trigger').item.json.message.photo.length - 1].file_id + \" . Tienes que usar OBLIGATORIAMENTE la herramienta de la PC con la accion 'analizar_imagen' pasandole este ID en el parametro para poder verla]\" : \"\" }}\n\n[SISTEMA OCULTO PERMANENTE: La acción abrir_programa acepta el nombre de CUALQUIER aplicación instalada, no sólo Photoshop, Steam o navegador. Pasá en parametro el nombre que diga Usuario. Un PDF adjunto se imprime por una ruta automática separada y nunca debe interpretarse como imprimir_mesa.]",
+        "options": {
+          "systemMessage": "Sos Rebecca personal, la asistente de Usuario conectada a Telegram y a su PC. Conservá tu personalidad enérgica, pícara, argentina con tintes chilenos y respondé breve. No uses Markdown, asteriscos ni etiquetas de actuación en texto normal.\n\nHERRAMIENTAS:\n- Usalas de forma nativa y silenciosa. Nunca escribas ni imites mensajes internos como \"Calling\", nombres de herramientas, JSON o código.\n- Para una acción de PC, agenda, SubliZen, correo, música o fútbol usá ejecutar_comando_pc y esperá el resultado. Nunca afirmes que hiciste algo sin ese resultado.\n- Para ampliar una noticia cuyo titular esté escrito en el mensaje, usá ejecutar_comando_pc con explicar_noticia(titular) una sola vez. No repitas búsquedas equivalentes.\n- Para otros datos actuales, noticias, precios o enlaces usá Buscar en Internet. No uses el buscador para activar seguimientos de partidos.\n- Usá Buscar en Internet sólo cuando Usuario pida explícitamente buscar, averiguar, investigar o comparar información externa, o cuando solicite fuentes, enlaces, noticias, precios o datos actuales. La palabra \"busco\" dentro de una reflexión no es una orden de búsqueda.\n- Si Usuario habla de sentimientos, pareja, celos, miedo, decisiones personales, apoyo u opiniones sobre lo que le pasa, respondé como compañera y no abras el buscador, salvo que pida expresamente consultar fuentes externas o Internet.\n- Si Usuario pide varias acciones, invocá la herramienta una vez por acción antes de responder.\n- Consultar es seguro; borrar, enviar, imprimir, pagar o modificar requiere una orden explícita.\n\nBÚSQUEDA WEB:\n- Convertí lo pedido en consultas cortas, concretas y en español; incluí fecha actual cuando importe.\n- El sustantivo principal y sus especificaciones son obligatorios: una página sobre azulejos, platos u otro insumo no sirve si Usuario pidió tazas, aunque también diga \"sublimable\".\n- Priorizá exactitud sobre cantidad. Es mejor devolver una opción correcta y aclarar que faltan más que rellenar con enlaces apenas relacionados.\n- Respondé con la conclusión y de 2 a 5 enlaces directos. No inventes hechos, precios, stock, ubicación ni enlaces ausentes en los resultados.\n- Si una fuente no permite verificar un dato, indicalo en vez de completarlo por intuición.\n\nCOMPARADOR DE PRECIOS ESTILO ZAPIA:\n1. La zona habitual de Usuario es TU_CIUDAD, TU_PROVINCIA, TU_PAIS. Usala automáticamente cuando diga \"en mi zona\", \"cerca\" o no especifique otra ubicación.\n2. Primera búsqueda: producto/modelo exacto + precio + comprar + stock + TU_CIUDAD. Priorizá retiro local.\n3. Si no aparecen al menos 3 ofertas útiles, ampliá a Zona Oeste y AMBA. Si todavía faltan, ampliá a Argentina con envío a TU_CIUDAD. Hacé como máximo 3 búsquedas.\n4. Compará entre 3 y 5 opciones: precio publicado, comercio, ubicación o envío, stock sólo si está confirmado y enlace directo. Ordená por costo total cuando el envío esté informado; si no, aclaralo.\n5. Destacá mejor precio, mejor opción cercana y mejor relación precio/confianza. Avisá que precio y stock pueden cambiar y no inventes descuentos.\n\nREGLAS IMPORTANTES DE ACCIONES:\n- abrir_programa: parametro es cualquier aplicación pedida, no sólo las conocidas.\n- Audio o pedido explícito de hablar: acción hablar, parametro con el texto; después no agregues texto.\n- Imagen de Telegram: analizar_imagen con el file_id provisto.\n- PDF/documento común: preguntá simple o doble faz y luego imprimir_pdf(nombre, formato). Mesa/diseño para sublimar: imprimir_mesa directo.\n- Deuda inicial/corrección: fijar_deuda(ID, pagado hasta ahora, total); pago nuevo: registrar_pago(ID, monto nuevo).\n- Correo: programar_correo(destino, fecha/hora, \"Asunto | Cuerpo\", nombre de adjunto). Si no hay fecha, próximos 2 minutos.\n- Seguimiento de equipo: seguir_partido(equipo); consulta en vivo: resumen_partido_vivo; detener: detener_partido.\n- Pedidos/trabajos: gestion_lote_pedidos usa parametro=\"eliminar:#10|eliminar:#11\" para borrar varios; parametro=\"completar:#10\" para completar. Los números de pedido nunca son recordatorios.\n- Recordatorios se borran con borrar_recordatorio(ID), nunca con gestión de pedidos.\n\nSi una herramienta falla, explicá el problema en lenguaje natural y no muestres el protocolo interno.",
+          "maxIterations": 4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        272,
+        32
+      ],
+      "id": "338a266d-8f63-4acb-bfbf-48e021b5112f",
+      "name": "AI Agent",
+      "onError": "continueRegularOutput",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        32,
+        272
+      ],
+      "id": "df3c7148-b7cf-4eaa-9430-d7ff428ec0a7",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "name": "CONFIGURE_ME - googlePalmApi"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        880,
+        320
+      ],
+      "id": "43fd5746-a183-4ace-baef-9bfb3e0285cf",
+      "name": "Calculator",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-3.3-70b-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -1264,
+        64
+      ],
+      "id": "28e5056c-154d-461e-9b5a-0e449c7296db",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "name": "CONFIGURE_ME - openRouterApi"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -1056,
+        272
+      ],
+      "id": "ab2fa677-1b9d-4249-9ba7-b85d4f95857f",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "name": "CONFIGURE_ME - groqApi"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Buscador web en tiempo real. Usalo sólo cuando Usuario pida explícitamente buscar, averiguar, investigar o comparar información externa, o solicite fuentes, enlaces, noticias, precios o datos actuales. 'Busco' dentro de una reflexión personal no es una orden. No lo uses para charlas emocionales, de pareja, celos, miedo o decisiones personales salvo pedido explícito de consultar Internet. Conservá el producto o modelo exacto en la consulta; no lo reemplaces por una categoría parecida. Para compras incluí ubicación y precio. Devuelve fuentes y enlaces: descartá páginas que sólo coincidan en una palabra genérica y nunca inventes datos ausentes.",
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}",
+        "options": {
+          "topic": "general",
+          "search_depth": "basic",
+          "max_results": 10,
+          "country": "argentina",
+          "include_raw_content": false,
+          "include_images": false
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        768,
+        320
+      ],
+      "id": "89b73383-31d8-468e-8b59-e9348ee6076c",
+      "name": "Buscar en Internet",
+      "credentials": {
+        "tavilyApi": {
+          "name": "CONFIGURE_ME - tavilyApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Ya estoy activa, que hacemos hoy choom?",
+        "options": {
+          "inputPlaceholder": "Escribile a Rebecca...",
+          "subtitle": "Netrunner local activa, choom",
+          "title": "Rebecca AI",
+          "customCss": ":root {\n  /* --- COLORES BASE (Tuning Cyberpunk & Xeneize) --- */\n  --chat--color-dark: #0b0f19;                  /* Fondo general oscuro */\n  --chat--color-light: #111827;                 /* Fondo del cuerpo del chat */\n  --chat--color-white: #1e293b;                 /* Fondo para las burbujas de Rebecca */\n  --chat--color--secondary: #0d47a1;            /* Azul Boca (Tus burbujas) */\n  --chat--color--primary: #00ff66;              /* Verde Neón para detalles y botones */\n  --chat--color--primary-shade-50: #00dd55;\n\n  /* --- FUENTE --- */\n  --chat--font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;\n\n  /* --- VENTANA DEL CHAT --- */\n  --chat--window--border: 1px solid #00ff6633;  /* Borde sutil verde neón */\n  --chat--window--border-radius: 0.75rem;       /* Bordes más redondeados y modernos */\n\n  /* --- ENCABEZADO (Header) --- */\n  --chat--header--background: #0b0f19;          /* Fondo del encabezado */\n  --chat--header--color: #00ff66;               /* Título en verde neón */\n  --chat--heading--font-size: 1.5em;\n\n  /* --- MENSAJES DE REBECCA (Bot) --- */\n  --chat--message--bot--background: #1e293b;    /* Fondo gris oscuro */\n  --chat--message--bot--color: #00ff66;         /* Texto verde neón */\n  --chat--message--bot--border: 1px solid #00ff6622;\n\n  /* --- TUS MENSAJES (User) --- */\n  --chat--message--user--background: #0d47a1;   /* Fondo Azul Boca */\n  --chat--message--user--color: #ffca28;        /* Texto Oro */\n  --chat--message--user--border: 1px solid #ffca2833;\n\n  /* --- CAJA DE ENTRADA (Donde escribís) --- */\n  --chat--input--background: #111827;           /* Fondo oscuro para el input */\n  --chat--input--text-color: #ffffff;           /* Texto blanco al escribir */\n  --chat--input--send--button--background: #111827;\n  --chat--input--send--button--color: #00ff66;  /* Flecha de enviar verde */\n  --chat--input--send--button--color-hover: #00dd55;\n\n  /* --- ESTRUCTURAS GENERALES --- */\n  --chat--body--background: #0b0f19;\n  --chat--footer--background: #0b0f19;\n  --chat--footer--color: #6b7280;\n}\n\n/* Modificamos el ancho de los globos de texto para que aprovechen mejor la pantalla */\n.chat-message {\n  max-width: 75% !important;\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -1232,
+        -192
+      ],
+      "id": "b7cf41fd-c732-4954-92a3-259c88b3f721",
+      "name": "When chat message received",
+      "disabled": true,
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}_v6",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        432,
+        304
+      ],
+      "id": "e3681997-134e-43de-8627-77ab741d8dd1",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "name": "CONFIGURE_ME - postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -784,
+        -64
+      ],
+      "id": "b3e1ce8b-d850-465b-a606-07876331542d",
+      "name": "Telegram Trigger",
+      "credentials": {
+        "telegramApi": {
+          "name": "CONFIGURE_ME - telegramApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const errorRaw = $json.error ?? $json.errorMessage ?? '';\nconst errorText = typeof errorRaw === 'string'\n  ? errorRaw.trim()\n  : String(errorRaw?.description ?? errorRaw?.message ?? '').trim();\n\nif (errorText) {\n  if (/503|service unavailable|high demand|alta demanda|saturad/i.test(errorText)) {\n    return [{ json: { message: 'El modelo está saturado en este momento. La acción puede haberse ejecutado antes del corte; revisá el resultado antes de repetirla para no duplicarla.' } }];\n  }\n  return [{ json: { message: 'No pude terminar el pedido por un error interno. No voy a asumir que la acción se completó; probá nuevamente en unos segundos.' } }];\n}\n\nconst raw = $json.respuesta ?? $json.output ?? $json.text ?? $json.message ?? '';\nconst respuesta = typeof raw === 'string' ? raw.trim() : JSON.stringify(raw);\n\nif (!respuesta) {\n  return [{ json: { message: 'No pude generar una respuesta esta vez. Probá de nuevo en unos segundos.' } }];\n}\n\nconst esAudioYaEnviado = /audio mandado|nota de voz generada|audio generado/i.test(respuesta);\nif (esAudioYaEnviado) return [];\n\n// Gemini a veces termina mostrando una segunda llamada al buscador como texto,\n// aun cuando Tavily ya devolvió resultados válidos. Rescatamos esos datos del\n// nodo ejecutado para no perder precios ni enlaces por un fallo de formato.\nconst resultadosWeb = () => {\n  try {\n    const items = $('Buscar en Internet').all();\n    const encontrados = [];\n    for (const item of items) {\n      const raiz = item?.json ?? item ?? {};\n      const listas = [raiz.results, raiz.response?.results, raiz.data?.results];\n      for (const lista of listas) {\n        if (Array.isArray(lista)) encontrados.push(...lista);\n      }\n    }\n    const vistos = new Set();\n    return encontrados.filter(resultado => {\n      const url = String(resultado?.url ?? '').trim();\n      if (!/^https?:\\/\\//i.test(url) || vistos.has(url)) return false;\n      vistos.add(url);\n      return true;\n    });\n  } catch (_) {\n    return [];\n  }\n};\n\nconst formatearResultadosWeb = (resultados, consulta = '') => {\n  const opciones = resultados.slice(0, 5).map((resultado, indice) => {\n    const titulo = String(resultado?.title ?? 'Resultado').replace(/\\s+/g, ' ').trim();\n    const contenido = String(resultado?.content ?? '').replace(/\\s+/g, ' ').trim();\n    const precio = `${titulo} ${contenido}`.match(/(?:\\$|ARS\\s*)\\s*(?:\\d{1,3}(?:\\.\\d{3})+|\\d+)(?:,\\d{2})?/i)?.[0]?.replace(/\\s+/g, ' ');\n    const url = String(resultado?.url ?? '').trim();\n    return `${indice + 1}. ${titulo}${precio ? ` — ${precio}` : ''}\\n${url}`;\n  });\n  const asunto = consulta ? ` para \"${consulta}\"` : '';\n  return `Encontré estas opciones${asunto}:\\n\\n${opciones.join('\\n\\n')}\\n\\nLos precios, el stock y el costo de envío pueden cambiar; confirmalos en cada enlace antes de comprar.`;\n};\n\n// Si un proveedor devuelve como texto una invocación que no fue ejecutada, nunca\n// mostramos el protocolo interno y distinguimos la operación que quedó pendiente.\nif (/^calling\\s+(?:default_api:)?(?:buscar[_ ]en[_ ]internet|search[_ ]in[_ ]tavily)\\b/i.test(respuesta)) {\n  const consulta = respuesta.match(/(?:query|consulta)\\s*[:=]\\s*[\\\"']?([^}\\n\\\"']+)/i)?.[1]?.trim();\n  const encontrados = resultadosWeb();\n  if (encontrados.length) {\n    return [{ json: { message: formatearResultadosWeb(encontrados, consulta) } }];\n  }\n  const detalle = consulta ? ` sobre \"${consulta}\"` : '';\n  return [{ json: { message: `No pude completar la búsqueda web${detalle}. Reintentá en unos segundos; todavía no tengo un resultado verificado.` } }];\n}\nif (/^calling\\s+(?:default_api:)?ejecutar_comando_pc\\b/i.test(respuesta)) {\n  return [{ json: { message: 'El comando de la PC quedó sin ejecutar. Repetilo una vez; no voy a afirmar que se hizo hasta recibir la confirmación del equipo.' } }];\n}\nif (/^calling\\s+/i.test(respuesta)) {\n  return [{ json: { message: 'La respuesta del modelo llegó en un formato interno inválido. Reintentá el pedido en unos segundos.' } }];\n}\n\n// Telegram admite 4096 caracteres. Dejamos margen y partimos por párrafos o líneas.\nconst limite = 3800;\nconst partes = [];\nlet restante = respuesta;\nwhile (restante.length > limite) {\n  let corte = restante.lastIndexOf('\\n\\n', limite);\n  if (corte < limite * 0.55) corte = restante.lastIndexOf('\\n', limite);\n  if (corte < limite * 0.55) corte = restante.lastIndexOf(' ', limite);\n  if (corte < 1) corte = limite;\n  partes.push(restante.slice(0, corte).trim());\n  restante = restante.slice(corte).trim();\n}\nif (restante) partes.push(restante);\nreturn partes.map(message => ({ json: { message } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        144
+      ],
+      "id": "5ac18be7-7e19-4c38-9b20-8644c226d21d",
+      "name": "Code in JavaScript",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1424,
+        32
+      ],
+      "id": "5fe5a6d4-eda1-4450-bdc0-d832dee5e0d4",
+      "name": "Send a text message",
+      "credentials": {
+        "telegramApi": {
+          "name": "CONFIGURE_ME - telegramApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Control local de Rebecca. Completá accion y sólo los parámetros necesarios.\nAcciones: sistema, abrir_programa, imprimir_mesa, imprimir_pdf, estado_pc, observar_pantalla, activar_observador, desactivar_observador, estado_observador, buscar_archivo, analizar_imagen, hablar, crear_recordatorio, crear_recordatorio_recurrente, consultar_recordatorios, borrar_recordatorio, crear_pedido, reporte_pedidos, gestion_lote_pedidos, marcar_entregado, actualizar_fecha_entrega, consultar_cliente, fijar_deuda, registrar_pago, consultar_deudas, generar_recibo_sena, exportar_excel, registrar_venta, actualizar_stock, consultar_stock, agregar_producto, cotizar, listar_precios, programar_correo, crear_turno, consultar_turnos, cancelar_turno, completar_turno, seguir_partido, detener_partido, consultar_estado_partido, resumen_partido_vivo, pausar_entretiempo, buscar_musica, pausar_musica, continuar_musica, siguiente_cancion, anterior_cancion, estado_musica, perfil_musical, activar_no_molestar, desactivar_no_molestar, estado_no_molestar, activar_panico, desactivar_panico, explicar_noticia y generar_reporte_pdf.\nFirmas críticas: crear_pedido(producto, cliente, tareas, entrega); gestion_lote_pedidos(parametro=\"eliminar:#10|eliminar:#11\" o \"completar:#10\"); fijar_deuda(ID, pagado, total); registrar_pago(ID, monto nuevo); actualizar_stock(insumo, cambio con signo, unidad, alerta mínima); programar_correo(destino, fecha/hora, \"Asunto | Cuerpo\", nombre de archivo); imprimir_pdf(nombre, simple/doble); sistema(captura/apagar/mutear/subir/bajar/minimizar/bloquear). Música aleatoria o \"algo que me guste\": buscar_musica con la frase original; el servidor usa el perfil local aprendido. Montos sólo con números. No inventes parámetros.",
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "accion",
+              "value": "={{ $fromAI('accion', 'Acción exacta', 'string') }}"
+            },
+            {
+              "name": "parametro",
+              "value": "={{ $fromAI('parametro', 'Parámetro principal', 'string') }}"
+            },
+            {
+              "name": "parametro2",
+              "value": "={{ $fromAI('parametro2', 'Segundo parámetro', 'string') }}"
+            },
+            {
+              "name": "parametro3",
+              "value": "={{ $fromAI('parametro3', 'Tercer parámetro', 'string') }}"
+            },
+            {
+              "name": "parametro4",
+              "value": "={{ $fromAI('parametro4', 'Cuarto parámetro', 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        640,
+        320
+      ],
+      "id": "568fcd5b-c0d6-4ace-ac7b-24b7cbe54148",
+      "name": "ejecutar_comando_pc",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=={{ $('Telegram Trigger').item.json.message.chat.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        544,
+        432
+      ],
+      "id": "432587b1-21db-428c-bbe2-3ffea05530c2",
+      "name": "Simple Memory",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        64,
+        512
+      ],
+      "id": "2d3dd148-db42-4cff-ae0c-9eeb91c1e242",
+      "name": "Schedule Trigger",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"accion\": \"revisar_recordatorios\",\n  \"parametro\": \"\",\n  \"parametro2\": \"\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        272,
+        512
+      ],
+      "id": "935ec680-6e45-4cac-af80-d0982607b1e1",
+      "name": "HTTP Request",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatNvidia",
+      "typeVersion": 1,
+      "position": [
+        -1024,
+        64
+      ],
+      "id": "5eb98d1f-dc68-499e-a1c1-3b8ef076fa86",
+      "name": "NVIDIA Nemotron Chat Model",
+      "credentials": {
+        "nvidiaApi": {
+          "name": "CONFIGURE_ME - nvidiaApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 11
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        32,
+        704
+      ],
+      "id": "5d1a38c1-e579-40e9-a59f-e5c7ef0a9fb6",
+      "name": "Schedule Trigger1",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"accion\": \"enviar_resumen_diario\", \"parametro\": \"\", \"parametro2\": \"\", \"parametro3\": \"\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        240,
+        704
+      ],
+      "id": "dc711d3d-c86a-4c4c-869a-bb2272bc4d6f",
+      "name": "HTTP Request1",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"accion\": \"sistema\",\n  \"parametro\": \"captura {{ $json.text || $json.message?.text || '' }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        384,
+        -160
+      ],
+      "id": "f63f9740-088e-471e-be90-df5a86030eb3",
+      "name": "Captura y pantallazo",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"accion\": \"estado_pc\",\n  \"parametro\": \"\",\n  \"parametro2\": \"\",\n  \"parametro3\": \"\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        80,
+        -624
+      ],
+      "id": "164fed44-8a85-4798-adc4-69dd655278e0",
+      "name": "Estado",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"accion\": \"imprimir_mesa\",\n  \"parametro\": \"\",\n  \"parametro2\": \"\",\n  \"parametro3\": \"\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        64,
+        -336
+      ],
+      "id": "3aeb0f5d-e4d9-4eb8-a0ee-b77a586d7a95",
+      "name": "Imprimir mesa",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"accion\": \"clima_novedades\",\n  \"parametro\": \"clima\",\n  \"parametro2\": \"\",\n  \"parametro3\": \"\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        64,
+        -480
+      ],
+      "id": "58700a57-fc90-4488-a55e-000443e603c2",
+      "name": "Clima Atajo",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.voice.file_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "0b1118b7-cefc-4b30-933e-dc755618f303"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Voz"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e08759b7-5b93-4d42-aec6-a83c9a621fcf",
+                    "leftValue": "={{ !$json.message.document && ($json.message.text || $json.message.photo || $json.message.caption) }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Texto"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "f2248925-b682-47b3-a75f-6c5a24ba4dcc",
+                    "leftValue": "={{ $json.message.document && ($json.message.document.mime_type === 'application/pdf' || ($json.message.document.file_name || '').toLowerCase().endsWith('.pdf')) ? $json.message.document.file_id : '' }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PDF normal"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -592,
+        -64
+      ],
+      "id": "4ca7c4f8-27e3-4e3b-b925-00a76100726e",
+      "name": "Ver si es audio",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ accion: 'imprimir_pdf_telegram', parametro: $json.message.document.file_id, parametro2: $json.message.document.file_name || ('telegram_' + Date.now() + '.pdf'), parametro3: (($json.message.caption || '').toLowerCase().includes('doble') ? 'doble' : 'simple'), parametro4: String($json.message.chat.id) }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -336,
+        -304
+      ],
+      "id": "7eb56c11-48bf-463d-aecf-aad9e014f600",
+      "name": "Imprimir PDF recibido",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "00b4fa38-69ae-47df-922b-74ec01258b11",
+                    "leftValue": "={{ $json.ruta_rapida }}",
+                    "rightValue": "captura",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Captura"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "4b72efeb-3135-4a0c-8ae1-60ba190d485c",
+                    "leftValue": "={{ $json.ruta_rapida }}",
+                    "rightValue": "clima",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Clima"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8524354d-eb1b-402b-b064-09c46df20dc8",
+                    "leftValue": "={{ $json.ruta_rapida }}",
+                    "rightValue": "estado_pc",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Estado PC"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d746263e-e257-4416-971f-f14b327276d3",
+                    "leftValue": "={{ $json.ruta_rapida }}",
+                    "rightValue": "imprimir_mesa",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Imprimir mesa"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8862c920-dd4b-4797-a925-804beb757568",
+                    "leftValue": "={{ $json.ruta_rapida }}",
+                    "rightValue": "comando",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Comando rápido"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "6e71d94c-b2d3-4ab2-9ae8-9c54f06dd660",
+                    "leftValue": "={{ $json.ruta_rapida }}",
+                    "rightValue": "web",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Búsqueda web rápida"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -32,
+        -96
+      ],
+      "id": "b1663d96-ef2d-47e2-874e-4ba10a695ea6",
+      "name": "Trabajos mecanicos o no",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -704,
+        224
+      ],
+      "id": "64907ba7-7bc7-4d8b-b9e5-c7294bcbbb0e",
+      "name": "Get a file",
+      "credentials": {
+        "telegramApi": {
+          "name": "CONFIGURE_ME - telegramApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "groqApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "whisper-large-v3"
+            },
+            {
+              "name": "language",
+              "value": "es"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -288,
+        240
+      ],
+      "id": "5367a847-156c-49a5-ba54-8593dbe807d1",
+      "name": "voz con groq",
+      "credentials": {
+        "groqApi": {
+          "name": "CONFIGURE_ME - groqApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  if (item.binary && item.binary.data) {\n    item.binary.data.fileName = 'audio.ogg';\n    item.binary.data.fileExtension = 'ogg';\n  }\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        224
+      ],
+      "id": "823fe0cc-ba8a-4620-b8aa-f308e5c41f0a",
+      "name": "Code in JavaScript1",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 11
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        16,
+        928
+      ],
+      "id": "f547fbd8-bc43-44e9-8fd8-e642d985a816",
+      "name": "Schedule Trigger2",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"accion\":\"chequear_partidos_dia\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        928
+      ],
+      "id": "cbaaadb9-59ca-4b18-86a5-92af9034d691",
+      "name": "HTTP Request2",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = String($json.output ?? $json.text ?? $json.message ?? '').trim();\nconst error = $json.error ?? $json.errorMessage ?? '';\nconst esComando = /^Calling\\s+(?:(?:default_api:)?ejecutar_comando_pc)\\b/i.test(raw);\nif (!esComando) return [{ json: { recuperar_herramienta: false, respuesta: raw, error } }];\n\nlet cuerpo = raw.replace(/^Calling\\s+(?:(?:default_api:)?ejecutar_comando_pc)\\s*/i, '');\ncuerpo = cuerpo.replace(/^with\\s+input\\s*:\\s*/i, '').trim();\nlet datos = {};\ntry {\n  datos = JSON.parse(cuerpo);\n} catch (_) {\n  const valor = nombre => {\n    const patron = new RegExp(`${nombre}\\\\s*:\\\\s*(?:[\"']([^\"']*)[\"']|([^,}]*))`, 'i');\n    const coincidencia = cuerpo.match(patron);\n    return String(coincidencia?.[1] ?? coincidencia?.[2] ?? '').trim();\n  };\n  datos = {\n    accion: valor('accion'), parametro: valor('parametro'), parametro2: valor('parametro2'),\n    parametro3: valor('parametro3'), parametro4: valor('parametro4')\n  };\n}\nif (!datos.accion) {\n  return [{ json: { recuperar_herramienta: false, respuesta: 'No pude interpretar la acción. Repetí el pedido una vez.' } }];\n}\nreturn [{ json: {\n  recuperar_herramienta: true,\n  accion: String(datos.accion || ''), parametro: String(datos.parametro || ''),\n  parametro2: String(datos.parametro2 || ''), parametro3: String(datos.parametro3 || ''),\n  parametro4: String(datos.parametro4 || '')\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        32
+      ],
+      "id": "7b1a22ec-318f-4ba4-b876-aab5c4c38120",
+      "name": "Detectar llamada filtrada",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a61d9670-03ce-4b5b-a177-793997928582",
+              "leftValue": "={{ $json.recuperar_herramienta }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        752,
+        32
+      ],
+      "id": "8cae7e48-1386-41ee-9f46-5c2414895bcc",
+      "name": "¿Llamada filtrada?",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "accion",
+              "value": "={{ $json.accion }}"
+            },
+            {
+              "name": "parametro",
+              "value": "={{ $json.parametro || '' }}"
+            },
+            {
+              "name": "parametro2",
+              "value": "={{ $json.parametro2 || '' }}"
+            },
+            {
+              "name": "parametro3",
+              "value": "={{ $json.parametro3 || '' }}"
+            },
+            {
+              "name": "parametro4",
+              "value": "={{ $json.parametro4 || '' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        976,
+        -80
+      ],
+      "id": "c095b693-cbbd-41ea-ac81-6c586036052f",
+      "name": "Recuperar comando local",
+      "onError": "continueRegularOutput",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const errorRaw = $json.error ?? $json.errorMessage ?? '';\nconst errorText = typeof errorRaw === 'string' ? errorRaw : String(errorRaw?.message ?? errorRaw?.description ?? '');\nif (errorText) {\n  return [{ json: { message: 'No pude comunicarme con Rebecca Core para recuperar el comando. La acción no quedó confirmada.' } }];\n}\nconst estado = String($json.status || 'error');\nconst mensaje = String($json.message || $json.detail || 'La acción no devolvió una respuesta.');\nreturn [{ json: { message: estado === 'success' ? mensaje : `No pude completar la acción: ${mensaje}` } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        -80
+      ],
+      "id": "24b68fa0-43da-43f7-aa89-852936fc7036",
+      "name": "Formatear recuperación",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst original = String(item.text ?? item.message?.text ?? '').trim();\nconst pedido = original.replace(/^\\s*(?:rebecca|rebeca|becca)\\s*[,;:!-]?\\s*/i, '').trim();\nconst normal = pedido.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();\nconst variasAcciones = /\\s+(?:y|ademas|tambien)\\s+(?:me\\s+)?(?:abr|pon|reproduc|paus|continu|siguient|anterior|mostr|consult|imprim)/i.test(normal);\n\nlet ruta = 'agente';\nlet accion = '';\nlet parametro = '';\nlet consultaWeb = '';\n\nif (!item.message?.photo && !variasAcciones) {\n  const ampliarNoticia = pedido.match(/^(?:quiero\\s+(?:saber|conocer)\\s+m[aá]s|contame\\s+m[aá]s|ampl[ií](?:a|ame)|explicame\\s+m[aá]s)\\s+(?:(?:sobre|de)\\s+)?(.+)$/i);\n  let temaNoticia = ampliarNoticia?.[1]?.trim() || '';\n  if (/\\bnoticia\\b/i.test(pedido) && temaNoticia) {\n    temaNoticia = temaNoticia\n      .replace(/^(?:la\\s+)?(?:primera|segunda|tercera)\\s+noticia\\s*[,;:]?\\s*(?:esa\\s+de\\s+)?/i, '')\n      .replace(/^(?:esa\\s+)?noticia\\s+(?:de|sobre)\\s+/i, '')\n      .replace(/^de\\s+/i, '')\n      .trim();\n  }\n  const tituloExplicito = temaNoticia.split(/\\s+/).filter(Boolean).length >= 4;\n  const borrarPedidos = /^(?:(?:quiero|necesito)\\s+que\\s+|(?:podes|podrias)\\s+)?(?:elimin\\w*|borr\\w*|quit\\w*|sac\\w*|vola\\w*)\\s+(?:(?:el|la|los|las|mi|mis)\\s+)?(?:pedidos?|trabajos?)(?:\\s+pendientes?)?\\b/.test(normal);\n  const idsPedidos = [...normal.matchAll(/#(\\d+)/g)].map(coincidencia => coincidencia[1]);\n  if (/\\bnoticia\\b/i.test(pedido) && tituloExplicito) {\n    ruta = 'comando'; accion = 'explicar_noticia'; parametro = temaNoticia;\n  } else if (borrarPedidos && idsPedidos.length) {\n    ruta = 'comando'; accion = 'gestion_lote_pedidos';\n    parametro = [...new Set(idsPedidos)].map(id => `eliminar:#${id}`).join('|');\n  } else if (/\\b(?:captura|pantallazo|screenshot)\\b/.test(normal)) {\n    ruta = 'captura';\n  } else if (/\\bimprim(?:i|e|ir|ime)?\\b.*\\bmesa(?:\\s+de\\s+trabajo)?\\b|\\bmesa(?:\\s+de\\s+trabajo)?\\b.*\\bimprim/.test(normal)) {\n    ruta = 'imprimir_mesa';\n  } else if (/\\b(?:clima|temperatura|pronostico)\\b/.test(normal) || /^(?:que\\s+tiempo\\s+hace|como\\s+esta\\s+el\\s+tiempo)\\b/.test(normal)) {\n    ruta = 'clima';\n  } else if (/^(?:cual\\s+es\\s+el\\s+)?estado(?:\\s+(?:de\\s+)?(?:la\\s+)?(?:pc|computadora|equipo))?[?!.]*$/.test(normal)) {\n    ruta = 'estado_pc';\n  } else if (/^(?:(?:minimiza|minimizar|mostra|mostrar)\\s+(?:todo|el escritorio|(?:todas\\s+)?las ventanas)|(?:(?:subi|subir|aumenta|aumentar|baja|bajar|disminui|disminuir)\\s+(?:el\\s+)?(?:volumen|audio|sonido))|(?:mutea|mutear|silencia|silenciar)(?:\\s+(?:el\\s+)?(?:volumen|audio|sonido))?)$/.test(normal)) {\n    ruta = 'comando'; accion = 'sistema'; parametro = pedido;\n  } else if (/\\b(?:pausa|pausar|pausa|para|deten)\\w*\\b.*\\b(?:musica|cancion|tema|reproduccion)\\b/.test(normal)) {\n    ruta = 'comando'; accion = 'pausar_musica';\n  } else if (/\\b(?:continua|continuar|reanuda|reanudar|segui|seguir)\\w*\\b.*\\b(?:musica|cancion|tema|reproduccion)\\b/.test(normal)) {\n    ruta = 'comando'; accion = 'continuar_musica';\n  } else if (/^(?:(?:pasa|salta|cambia)\\w*\\s+(?:a\\s+)?(?:la\\s+)?)?(?:siguiente|proxima)(?:\\s+(?:cancion|tema|musica|reproduccion))?[?!.]*$/.test(normal)) {\n    ruta = 'comando'; accion = 'siguiente_cancion';\n  } else if (/^(?:(?:pasa|salta|cambia|volve)\\w*\\s+(?:a\\s+)?(?:la\\s+)?)?(?:anterior|previa)(?:\\s+(?:cancion|tema|musica|reproduccion))?[?!.]*$/.test(normal)) {\n    ruta = 'comando'; accion = 'anterior_cancion';\n  } else if (/\\bestado\\b.*\\b(?:musica|reproduccion|cancion)\\b/.test(normal)) {\n    ruta = 'comando'; accion = 'estado_musica';\n  } else if (/\\b(?:gustos?|perfil|aprendiste|conoces)\\b.*\\b(?:musica|musical(?:es)?|canciones?|artistas?)\\b/.test(normal)) {\n    ruta = 'comando'; accion = 'perfil_musical';\n  } else {\n    const abrir = pedido.match(/^(?:me\\s+)?(?:abri|abrí|abre|abres|abrime|ábreme|abrir|inicia|iniciá|iniciar|ejecuta|ejecutá|ejecutar|lanza|lanzá|lanzar)\\s+(?:(?:el|la)\\s+)?(.+?)(?:\\s+(?:por\\s+favor|porfa|please))?[?!.]*$/i);\n    if (abrir?.[1]) {\n      ruta = 'comando'; accion = 'abrir_programa'; parametro = abrir[1].trim();\n    } else if (/^(?:poneme|ponéme|ponme|pone|poné|pon|reproduc\\w*|busca\\w*|dame|quiero\\s+escuchar)\\b.*\\b(?:musica|cancion|tema|metal|rock|playlist)\\b/.test(normal)) {\n      ruta = 'comando'; accion = 'buscar_musica';\n      parametro = pedido.replace(/^(?:poneme|ponéme|ponme|pone|poné|pon|reproduc\\w*|busca\\w*|dame|quiero\\s+escuchar)\\s*/i, '').trim() || 'música para escuchar';\n    } else if (/^(?:mostra\\w*|lista\\w*|consulta\\w*|cuales\\s+son)\\b.*\\b(?:pedidos|trabajos)\\s+pendientes\\b/.test(normal)) {\n      ruta = 'comando'; accion = 'reporte_pedidos';\n    } else if (/^(?:mostra\\w*|lista\\w*|consulta\\w*|cuales\\s+son)\\b.*\\brecordatorios\\b/.test(normal)) {\n      ruta = 'comando'; accion = 'consultar_recordatorios';\n    } else if (/^(?:mostra\\w*|lista\\w*|consulta\\w*|cuales\\s+son)\\b.*\\bdeudas\\b/.test(normal)) {\n      ruta = 'comando'; accion = 'consultar_deudas';\n    } else if (/^(?:mostra\\w*|lista\\w*|consulta\\w*)\\b.*\\bstock\\b/.test(normal)) {\n      ruta = 'comando'; accion = 'consultar_stock';\n    } else if (/^(?:mostra\\w*|lista\\w*|consulta\\w*)\\b.*\\blista\\s+de\\s+precios\\b/.test(normal)) {\n      ruta = 'comando'; accion = 'listar_precios';\n    } else {\n      const ordenBusqueda = /^(?:(?:necesito|quiero|podes|podrias|puedes|me ayudas a)\\s+(?:que\\s+)?)?(?:busca|buscar|buscame|busque|busques|averigua|averiguar|investiga|investigar|compara|comparar|googlea|googlear|encontra|encontrar)\\b/.test(normal);\n      const pedidoLocal = /\\b(?:pedido|trabajo|recordatorio|deuda|turno|archivo|carpeta)\\b/.test(normal);\n      const datoComercial = /\\b(?:precio|precios|comprar|mayorista|proveedor|comercio|stock)\\b/.test(normal);\n      const fuenteExterna = /\\b(?:internet|web|online|google|fuente|fuentes|link|links|enlace|enlaces|noticia|noticias|actual)\\b/.test(normal);\n      const ubicacionCompra = /\\b(?:cerca|TU_CIUDAD|zona oeste|amba|mercadolibre|argentina)\\b/.test(normal);\n      const buscoInformacionExterna = /\\bbusco\\b/.test(normal) && (datoComercial || fuenteExterna);\n      if ((ordenBusqueda && !pedidoLocal) || buscoInformacionExterna || (datoComercial && ubicacionCompra)) {\n        ruta = 'web';\n      }\n    }\n  }\n}\n\n// Operaciones explícitas del dueño: una sola transacción, sin depender del modelo.\nconst comercio = /^(?:vendi\\b|(?:registra\\w*|anota\\w*|modifica\\w*|corrige|corregi|anula\\w*|cancela\\w*)\\s+(?:(?:una|la)\\s+)?venta\\b|(?:cambia|actualiza|fija)(?: el)? precio\\b|(?:las?|los?)\\s+.+?\\s+(?:(?:tienen? un nuevo precio[,;]?\\s*)?(?:ahora\\s+)?(?:salen?|cuestan?|vale[n]?)\\s+\\$?\\d)|(?:marca\\w*|pone|pon)\\s+(?:(?:el|los)\\s+)?pedidos?\\s+#?\\d|(?:mostrame|mostrar|lista|listar|ver|consulta|consultar)(?: las)? ventas\\b)/.test(normal);\nif (comercio && !item.message?.photo) {\n  ruta = 'comando'; accion = 'gestionar_comercio'; parametro = pedido;\n}\nlet claveComercio = '';\nif (comercio) {\n  let origen = item;\n  try { origen = $('Telegram Trigger').all()[0]?.json || item; } catch (_) {}\n  const chat = origen.message?.chat?.id;\n  const id = origen.message?.message_id;\n  if (chat !== undefined && id !== undefined) claveComercio = `telegram:${chat}:${id}`;\n}\n\nif (ruta === 'web') {\n  consultaWeb = pedido\n    .replace(/^(?:(?:necesito|quiero|podes|podrias|puedes|me ayudas a)\\s+(?:que\\s+)?)?(?:busca\\w*|averigua\\w*|investiga\\w*|compara\\w*|googlea\\w*|encontra\\w*)\\s+(?:en\\s+internet\\s+)?/i, '')\n    .trim() || pedido;\n  const normalConsulta = consultaWeb.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();\n  const pareceCompra = /\\b(?:taza|remera|buzo|gorra|insumo|sublim|producto|maquina|impresora|tinta|papel|vinilo|precio|comprar|mayorista|proveedor|stock)\\w*\\b/.test(normalConsulta);\n  if (pareceCompra && !/\\b(?:precio|comprar|mayorista|proveedor|venta)\\b/.test(normalConsulta)) {\n    consultaWeb += ' precio mayorista proveedor venta';\n  }\n  if (pareceCompra && !/\\b(?:argentina|buenos aires|TU_CIUDAD|zona oeste|amba)\\b/.test(normalConsulta)) {\n    consultaWeb += ' Argentina';\n  }\n  consultaWeb = consultaWeb.slice(0, 280);\n}\n\nreturn [{ json: {\n  ...item,\n  ruta_rapida: ruta,\n  accion_rapida: accion,\n  parametro_rapido: parametro,\n  consulta_web: consultaWeb,\n  parametro2_rapido: '', parametro3_rapido: '', parametro4_rapido: claveComercio\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        -96
+      ],
+      "id": "30d53a1e-a0c8-4730-971d-995523d48c45",
+      "name": "Preparar ruta rápida",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/ejecutar",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "accion",
+              "value": "={{ $json.accion_rapida }}"
+            },
+            {
+              "name": "parametro",
+              "value": "={{ $json.parametro_rapido || '' }}"
+            },
+            {
+              "name": "parametro2",
+              "value": "={{ $json.parametro2_rapido || '' }}"
+            },
+            {
+              "name": "parametro3",
+              "value": "={{ $json.parametro3_rapido || '' }}"
+            },
+            {
+              "name": "parametro4",
+              "value": "={{ $json.parametro4_rapido || '' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        400,
+        -16
+      ],
+      "id": "df4323d3-d694-4b48-a2f1-66393cab5d7f",
+      "name": "Ejecutar comando rápido",
+      "onError": "continueRegularOutput",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const errorRaw = $json.error ?? $json.errorMessage ?? '';\nconst errorText = typeof errorRaw === 'string' ? errorRaw : String(errorRaw?.message ?? errorRaw?.description ?? '');\nif (errorText) {\n  return [{ json: { message: 'No pude comunicarme con Rebecca Core. El comando no se confirmó y no voy a fingir que se ejecutó.' } }];\n}\nconst estado = String($json.status || 'error');\nconst mensaje = String($json.message || $json.detail || 'El equipo no devolvió una confirmación.');\nreturn [{ json: { message: estado === 'success' ? mensaje : `No pude completar el comando: ${mensaje}` } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        -16
+      ],
+      "id": "5df7e7d9-67ab-4b81-873b-a86a82b72276",
+      "name": "Formatear comando rápido",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "tavilyApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: $json.consulta_web, topic: 'general', search_depth: 'basic', country: 'argentina', max_results: 10, include_answer: false, include_raw_content: false, include_images: false } }}",
+        "options": {
+          "timeout": 12000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        448,
+        336
+      ],
+      "id": "4456e457-8dbf-46d6-94f5-378718a828a2",
+      "name": "Buscar con Tavily directo",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "tavilyApi": {
+          "name": "CONFIGURE_ME - tavilyApi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const errorRaw = $json.error ?? $json.errorMessage ?? '';\nconst error = typeof errorRaw === 'string'\n  ? errorRaw.trim()\n  : String(errorRaw?.message ?? errorRaw?.description ?? '').trim();\nconst consulta = String($json.query ?? '').trim();\nconst resultadosCrudos = Array.isArray($json.results) ? $json.results : [];\nconst limpiar = valor => String(valor ?? '').replace(/\\s+/g, ' ').trim();\nconst consultaNormal = consulta.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();\nconst esCompra = /\\b(?:taza|remera|buzo|gorra|insumo|sublim|producto|maquina|impresora|tinta|papel|vinilo|precio|comprar|mayorista|proveedor|stock)\\w*\\b/.test(consultaNormal);\nconst normalizarPalabras = valor => limpiar(valor)\n  .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase()\n  .replace(/https?:\\/\\//g, ' ').replace(/[^a-z0-9]+/g, ' ').trim()\n  .split(/\\s+/).filter(Boolean)\n  .map(palabra => palabra.length > 4 && palabra.endsWith('s') ? palabra.slice(0, -1) : palabra);\nconst palabrasVacias = new Set([\n  'argentina','aires','amba','buenos','buscar','busca','comprar','compra','cerca','TU_CIUDAD',\n  'internet','mayorista','online','para','precio','proveedor','stock','venta','web','zona','oeste',\n  'necesito','quiero','podes','podrias','averigua','investiga','compara','encontra'\n]);\nconst tokensConsulta = [...new Set(normalizarPalabras(consulta).filter(token => token.length >= 3 && !/^\\d+$/.test(token) && !palabrasVacias.has(token)))];\nconst ancla = tokensConsulta[0] || '';\nconst vistos = new Set();\nconst resultados = resultadosCrudos.map(resultado => {\n  const url = String(resultado?.url ?? '').trim();\n  if (!/^https?:\\/\\//i.test(url) || vistos.has(url)) return null;\n  vistos.add(url);\n  const tituloUrl = new Set(normalizarPalabras(`${resultado?.title ?? ''} ${url}`));\n  const contenido = new Set(normalizarPalabras(resultado?.content ?? ''));\n  const fuertes = tokensConsulta.filter(token => tituloUrl.has(token));\n  const debiles = tokensConsulta.filter(token => !tituloUrl.has(token) && contenido.has(token));\n  const coincidencias = fuertes.length + debiles.length;\n  const minimo = tokensConsulta.length <= 1 ? tokensConsulta.length : Math.min(2, Math.ceil(tokensConsulta.length * 0.5));\n  const anclaFuerte = !ancla || tituloUrl.has(ancla);\n  if (tokensConsulta.length && (coincidencias < minimo || !anclaFuerte)) return null;\n  const scoreTavily = Number(resultado?.score ?? 0);\n  return {...resultado, _relevancia: fuertes.length * 4 + debiles.length + (Number.isFinite(scoreTavily) ? scoreTavily : 0)};\n}).filter(Boolean).sort((a, b) => b._relevancia - a._relevancia).slice(0, 5);\n\nif (error) {\n  return [{json:{message:'Tavily no pudo completar la búsqueda esta vez. La cancelé rápido para no dejarte esperando; probá nuevamente en unos segundos.'}}];\n}\nif (!resultados.length) {\n  const detalle = consulta ? ` para \"${consulta}\"` : '';\n  const motivo = resultadosCrudos.length\n    ? `Encontré páginas, pero las descarté porque no coincidían suficientemente con ${esCompra ? 'el producto pedido' : 'el tema pedido'}.`\n    : 'No encontré resultados verificables.';\n  const sugerencia = esCompra\n    ? 'Probá agregando marca, medida, material o modelo exacto.'\n    : 'Probá formulando una consulta más concreta o indicando qué tipo de fuente necesitás.';\n  return [{json:{message:`${motivo}${detalle} ${sugerencia}`}}];\n}\n\nconst opciones = resultados.map((resultado, indice) => {\n  const titulo = limpiar(resultado.title) || 'Resultado';\n  const contenido = limpiar(resultado.content);\n  const precio = `${titulo} ${contenido}`.match(/(?:\\$|ARS\\s*)\\s*(?:\\d{1,3}(?:\\.\\d{3})+|\\d+)(?:,\\d{2})?/i)?.[0]?.replace(/\\s+/g, ' ');\n  const resumen = contenido.length > 180 ? `${contenido.slice(0, 177).trim()}...` : contenido;\n  const url = limpiar(resultado.url);\n  return `${indice + 1}. ${titulo}${precio ? ` — ${precio}` : ''}${resumen ? `\\n${resumen}` : ''}\\n${url}`;\n});\nconst asunto = consulta ? ` para \"${consulta}\"` : '';\nconst descartados = Math.max(0, resultadosCrudos.length - resultados.length);\nconst notaFiltro = descartados ? ` Descarté ${descartados} resultado${descartados === 1 ? '' : 's'} que no coincidían bien.` : '';\nlet mensaje = `Encontré ${resultados.length} opción${resultados.length === 1 ? '' : 'es'} relevante${resultados.length === 1 ? '' : 's'}${asunto}.${notaFiltro}\\n\\n${opciones.join('\\n\\n')}\\n\\nPrecio, stock y envío pueden cambiar; confirmalos en el enlace antes de comprar.`;\nif (mensaje.length > 3800) mensaje = `${mensaje.slice(0, 3760).trim()}\\n\\nResultados recortados para Telegram.`;\nreturn [{json:{message:mensaje}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        336
+      ],
+      "id": "813b731a-e381-4844-a26a-589875a37e94",
+      "name": "Formatear Tavily directo",
+      "credentials": {}
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Detectar llamada filtrada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        []
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Ver si es audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ejecutar_comando_pc": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        []
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NVIDIA Nemotron Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Captura y pantallazo": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Imprimir mesa": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clima Atajo": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estado": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ver si es audio": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Preparar ruta rápida",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Imprimir PDF recibido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Imprimir PDF recibido": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trabajos mecanicos o no": {
+      "main": [
+        [
+          {
+            "node": "Captura y pantallazo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Clima Atajo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Estado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Imprimir mesa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ejecutar comando rápido",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar con Tavily directo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "voz con groq": {
+      "main": [
+        [
+          {
+            "node": "Preparar ruta rápida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "voz con groq",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar en Internet": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detectar llamada filtrada": {
+      "main": [
+        [
+          {
+            "node": "¿Llamada filtrada?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Llamada filtrada?": {
+      "main": [
+        [
+          {
+            "node": "Recuperar comando local",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recuperar comando local": {
+      "main": [
+        [
+          {
+            "node": "Formatear recuperación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear recuperación": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar ruta rápida": {
+      "main": [
+        [
+          {
+            "node": "Trabajos mecanicos o no",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ejecutar comando rápido": {
+      "main": [
+        [
+          {
+            "node": "Formatear comando rápido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear comando rápido": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar con Tavily directo": {
+      "main": [
+        [
+          {
+            "node": "Formatear Tavily directo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Tavily directo": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "nodeGroups": []
+}
