@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./Rebecca-AI-Banner.png" alt="Rebecca AI Banner" width="100%">
+  <img src="./media/Rebecca-AI-Banner.png" alt="Rebecca AI Banner" width="100%">
 </p>
 
 <p align="center">
@@ -62,7 +62,7 @@ The system is designed so that optional integrations can remain disabled without
 ---
 
 <p align="center">
-  <img src="./Architecture-banner.png" alt="Rebecca AI Architecture" width="100%">
+  <img src="./media/Architecture-banner.png" alt="Rebecca AI Architecture" width="100%">
 </p>
 
 Rebecca is divided into a local Core, a desktop Companion and several optional modules.
@@ -145,7 +145,7 @@ The Core therefore remains on the local machine unless you explicitly configure 
 ---
 
 <p align="center">
-  <img src="./Installation-banner.png" alt="Rebecca AI Installation" width="100%">
+  <img src="./media/Installation-banner.png" alt="Rebecca AI Installation" width="100%">
 </p>
 
 ## Requirements
